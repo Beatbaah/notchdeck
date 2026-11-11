@@ -45,7 +45,10 @@ Launch at Login need that.
 - Nothing else is needed. Notch hover works by polling the pointer position, so there's no
   Accessibility prompt.
 
-The build is ad-hoc signed, so macOS may ask for Automation again after each rebuild. If Gatekeeper
+`build.sh` signs with your **Apple Development** certificate if this Mac has one, so the Automation
+permission survives rebuilds. To get one for free: Xcode → Settings → Accounts → add your Apple ID →
+Manage Certificates → **+** → Apple Development. Without it the build is signed ad hoc, and macOS may ask
+for Automation again after each rebuild. If Gatekeeper
 blocks the first launch, right-click the app → **Open**.
 
 ## Project layout

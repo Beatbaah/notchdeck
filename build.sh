@@ -13,8 +13,21 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"
 cp Support/Info.plist "$APP/Contents/Info.plist"
 
-# Ad-hoc signature so macOS can track permissions (Automation) for the app.
-codesign --force --sign - "$APP"
+# Sign with a stable identity when this Mac has one, so the Automation
+# permission (Music/Spotify) survives rebuilds. Without one, sign ad hoc;
+# macOS may then ask again after each rebuild. Override with
+# NOTCHDECK_SIGN_IDENTITY="Apple Development: Your Name (TEAMID)".
+IDENTITY="${NOTCHDECK_SIGN_IDENTITY:-}"
+if [ -z "$IDENTITY" ]; then
+  IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | sed -n 's/.*"\(Apple Development: .*\)"/\1/p' | head -1)"
+fi
+if [ -n "$IDENTITY" ]; then
+  codesign --force --sign "$IDENTITY" "$APP"
+  echo "Signed with: $IDENTITY"
+else
+  codesign --force --sign - "$APP"
+  echo "Signed ad hoc (no Apple Development identity found)"
+fi
 
 echo "Built $APP"
 echo "Install:  cp -R \"$APP\" /Applications/ && open \"/Applications/${APP_NAME}.app\""
