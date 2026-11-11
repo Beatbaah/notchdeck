@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Used by release.sh. Notarised apps run with the hardened runtime, which blocks
+     these unless they're declared here (the Info.plist usage strings explain them). -->
+<plist version="1.0">
+<dict>
+	<!-- Read and control Music, Spotify, VLC and browsers over AppleScript. -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<!-- Today's and tomorrow's events on the Calendar tab. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+</dict>
+</plist>

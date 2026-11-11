@@ -87,6 +87,31 @@ tools/make-icon.swift   redraws the app icon (see the comment at its top)
 build.sh
 ```
 
+## Releasing
+
+`release.sh` builds, signs, notarises and publishes a GitHub release that opens without a Gatekeeper
+warning:
+
+```bash
+./release.sh 1.0.0                # tag v1.0.0 and publish NotchDeck-1.0.0.zip on GitHub
+./release.sh 1.0.0 --no-publish   # notarised zip in dist/, nothing published
+./release.sh 1.0.0 --local        # hardened-runtime build signed with any certificate, to test here
+```
+
+One-time setup:
+
+1. A paid Apple Developer Program membership, and a **Developer ID Application** certificate
+   (Xcode → Settings → Accounts → your paid team, not "Personal Team" → Manage Certificates → **+**).
+   If macOS calls the certificate untrusted, install Apple's
+   [WWDR G3 intermediate](https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer).
+2. An app-specific password (appleid.apple.com → Sign-In and Security), saved for `notarytool`:
+   `xcrun notarytool store-credentials notchdeck --apple-id <email> --team-id <TEAMID>`
+3. `gh auth login`.
+
+The first signing shows a Keychain prompt asking to let `codesign` use your key. Notarised builds
+run with the hardened runtime, so `Support/NotchDeck.entitlements` declares the Apple Events
+(player control) and Calendar access NotchDeck needs.
+
 ## Known limits
 
 - Now playing covers the players above only. Other apps (Podcasts, desktop YouTube Music, Audible…) can't be read,
