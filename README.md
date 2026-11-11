@@ -57,6 +57,10 @@ Launch at Login need that.
 - Nothing else is needed. Notch hover works by polling the pointer position, so there's no
   Accessibility prompt.
 
+**Network:** songs streamed from Apple Music have no cover over AppleScript. For those, NotchDeck
+sends the song's title and artist to Apple's public iTunes Search service to fetch the cover. It
+does this only when Music gives no cover, and nothing else about you or your listening is sent.
+
 `build.sh` signs with your **Apple Development** certificate if this Mac has one, so the Automation
 permission survives rebuilds. To get one for free: Xcode → Settings → Accounts → add your Apple ID →
 Manage Certificates → **+** → Apple Development. Without it the build is signed ad hoc, and macOS may ask

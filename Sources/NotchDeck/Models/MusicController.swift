@@ -127,8 +127,16 @@ final class MusicController: ObservableObject {
     private func loadArtwork(for now: NowPlaying, key: String) {
         if now.player == .music {
             AppleScript.runAsync(PlayerScripts.artworkSource(.music)!, ifRunning: Player.music.bundleID) { [weak self] result in
-                guard let self, self.artworkKey == key, let data = result?.data else { return }
-                self.artwork = NSImage(data: data)
+                guard let self, self.artworkKey == key else { return }
+                if let data = result?.data, let image = NSImage(data: data) {
+                    self.artwork = image
+                    return
+                }
+                // Streamed Apple Music songs have no artwork over AppleScript.
+                ArtworkLookup.fetch(title: now.title, artist: now.artist) { [weak self] data in
+                    guard let self, self.artworkKey == key, let data else { return }
+                    self.artwork = NSImage(data: data)
+                }
             }
             return
         }
