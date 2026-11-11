@@ -27,7 +27,7 @@ struct NotchRootView: View {
                     .frame(width: state.expandedSize.width, height: state.expandedSize.height)
                     .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
             } else {
-                CollapsedView(state: state, music: models.music, timer: models.timer)
+                CollapsedView(state: state, music: models.music)
                     .frame(width: state.collapsedSize.width, height: state.collapsedSize.height)
                     .environment(\.colorScheme, .dark)
                     .transition(.opacity)
@@ -48,7 +48,6 @@ struct NotchRootView: View {
 struct CollapsedView: View {
     @ObservedObject var state: NotchState
     @ObservedObject var music: MusicController
-    @ObservedObject var timer: TimerModel
 
     var body: some View {
         HStack(spacing: 0) {
@@ -64,10 +63,6 @@ struct CollapsedView: View {
         switch state.liveActivity {
         case .music:
             ArtworkView(image: music.artwork, size: max(14, state.notchSize.height - 12), corner: 5)
-        case .timer:
-            Image(systemName: "timer")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.orange)
         case .none:
             EmptyView()
         }
@@ -77,11 +72,6 @@ struct CollapsedView: View {
         switch state.liveActivity {
         case .music:
             EqualizerBars(playing: music.isPlaying)
-        case .timer:
-            Text(timer.remainingText)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.orange)
         case .none:
             EmptyView()
         }

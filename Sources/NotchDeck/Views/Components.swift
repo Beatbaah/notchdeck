@@ -94,8 +94,8 @@ struct TabButton: View {
     }
 }
 
-/// The open panel's background: the system's Liquid Glass (macOS 26+), which
-/// follows the user's settings (Clear or Tinted glass, Reduce Transparency).
+/// The open panel's background: the system's clear Liquid Glass (macOS 26+),
+/// which still honours Reduce Transparency.
 /// Older macOS gets the frosted material macOS used before.
 struct GlassBackground: NSViewRepresentable {
     var cornerRadius: CGFloat = 24
@@ -103,7 +103,7 @@ struct GlassBackground: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         if #available(macOS 26.0, *) {
             let glass = NSGlassEffectView()
-            glass.style = .regular
+            glass.style = .clear
             glass.cornerRadius = cornerRadius
             return glass
         }

@@ -11,16 +11,15 @@ On a Mac without a notch, it draws a black pill of the same size in the middle o
 
 | Tab | Features |
 | --- | --- |
-| **Home** | Now playing from **Music**, **Spotify**, **VLC**, or a web player in **Safari**, **Chrome**, **Brave** or **Edge** (artwork, title, artist, previous/play-pause/next). With nothing playing, it shows your **next event** today instead. Countdown **timer** with 1/5/15/25-minute presets: when it finishes, a sound plays and the notch opens. **Volume** slider, mute, battery level, sleep display. |
+| **Home** | Now playing from **Music**, **Spotify**, **VLC**, or a web player in **Safari**, **Chrome**, **Brave** or **Edge** (artwork, title, artist, previous/play-pause/next). With nothing playing, it shows your **next event** today instead. **Volume** slider, mute, battery level, sleep display. |
 | **Calendar** | Today's and tomorrow's events (all-day first), with times, place and calendar colour. Click one to open Calendar. |
 | **Shelf** | Drag files from Finder onto the notch to hold them, then drag them out to Mail, Slack, a folder, etc. Double-click to open, right-click to reveal in Finder. It stores only references, so your files are never moved or copied. |
 | **Clipboard** | The last 40 snippets of copied text. Click one to copy it again. History is kept in memory only. Items that password managers mark as secret are skipped. |
 | **Notes** | A scratch pad that saves as you type. |
 | **Apps** | Pinned app launcher. Click **+** to add an app; right-click an app to remove it. |
 
-While the notch is closed, it widens slightly to show a **live activity**:
+While music plays and the notch is closed, it widens slightly to show a **live activity**:
 - **Music playing:** album artwork on the left, animated bars on the right.
-- **Timer running:** the time remaining.
 
 The gear icon (top right of the open notch) has **Launch at Login** and **Quit**. There's also a small
 menu bar icon with **Open Notch** and **Quit**.
@@ -69,7 +68,7 @@ panel of the copy that's already running.
 ```
 Sources/NotchDeck/
   App/     entry point, app delegate, notch window controller, shared state, AppleScript helper
-  Models/  music, timer, clipboard, file shelf, app launcher, system (volume/battery)
+  Models/  music, calendar, clipboard, file shelf, app launcher, system (volume/battery)
   Views/   SwiftUI views for the closed notch, the open panel and each tab
 Support/Info.plist, AppIcon.icns
 tools/make-icon.swift   redraws the app icon (see the comment at its top)

@@ -30,7 +30,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
 
 /// What the closed notch shows on its left and right edges.
 enum LiveActivity: Equatable {
-    case none, music, timer
+    case none, music
 }
 
 final class NotchState: ObservableObject {
@@ -55,7 +55,6 @@ final class NotchState: ObservableObject {
         switch liveActivity {
         case .none: return 0
         case .music: return 34
-        case .timer: return 52
         }
     }
 

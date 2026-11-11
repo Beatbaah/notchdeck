@@ -42,10 +42,6 @@ final class NotchController: NSObject {
                                                selector: #selector(screensChanged),
                                                name: NSApplication.didChangeScreenParametersNotification,
                                                object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(timerFinished),
-                                               name: .notchDeckTimerFinished,
-                                               object: nil)
 
         // Polling the pointer 20 times a second is cheap, needs no Accessibility permission,
         // and keeps working while the user drags files from Finder.
@@ -170,14 +166,7 @@ final class NotchController: NSObject {
     }
 
     private func updateLiveActivity() {
-        let activity: LiveActivity
-        if models.timer.isActive {
-            activity = .timer
-        } else if models.music.isPlaying {
-            activity = .music
-        } else {
-            activity = .none
-        }
+        let activity: LiveActivity = models.music.isPlaying ? .music : .none
         if state.liveActivity != activity {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 state.liveActivity = activity
@@ -222,10 +211,5 @@ final class NotchController: NSObject {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
             state.isExpanded = false
         }
-    }
-
-    @objc private func timerFinished() {
-        NSSound(named: "Glass")?.play()
-        expand(tab: .home, holdOpenFor: 5)
     }
 }

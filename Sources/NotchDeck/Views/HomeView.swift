@@ -6,7 +6,7 @@ struct HomeView: View {
     var body: some View {
         HStack(spacing: 10) {
             MusicCard(music: models.music, calendar: models.calendar)
-            ControlsCard(system: models.system, timer: models.timer).frame(width: 210)
+            ControlsCard(system: models.system).frame(width: 190)
         }
     }
 }
@@ -68,11 +68,9 @@ struct MusicCard: View {
     }
 }
 
-/// Volume, battery, the timer (one row) and display sleep.
+/// Volume, battery and display sleep.
 struct ControlsCard: View {
     @ObservedObject var system: SystemModel
-    @ObservedObject var timer: TimerModel
-    private let presets: [Double] = [1, 5, 15, 25]
 
     var body: some View {
         Card {
@@ -96,7 +94,6 @@ struct ControlsCard: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                timerRow
                 Spacer(minLength: 0)
                 Button { system.sleepDisplay() } label: {
                     Label("Sleep display", systemImage: "moon.fill")
@@ -104,52 +101,6 @@ struct ControlsCard: View {
                 .buttonStyle(PillButtonStyle())
             }
         }
-    }
-
-    @ViewBuilder private var timerRow: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "timer").frame(width: 18).foregroundStyle(timer.isActive ? .orange : .primary)
-                .accessibilityHidden(true)
-            if timer.isActive {
-                Text(timer.remainingText)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.orange)
-                    .accessibilityLabel("Timer \(timer.remainingText) left")
-                Spacer(minLength: 0)
-                iconButton(timer.isRunning ? "pause.fill" : "play.fill", label: timer.isRunning ? "Pause timer" : "Resume timer") { timer.toggle() }
-                iconButton("xmark", label: "Stop timer") { timer.cancel() }
-            } else {
-                ForEach(presets, id: \.self) { minutes in
-                    Button("\(Int(minutes))") { timer.start(minutes: minutes) }
-                        .buttonStyle(ChipButtonStyle())
-                        .accessibilityLabel("Start a \(Int(minutes))-minute timer")
-                }
-                Text("min").font(.caption2).foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func iconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 10, weight: .bold)).frame(width: 22, height: 22)
-        }
-        .buttonStyle(ChipButtonStyle())
-        .accessibilityLabel(label)
-    }
-}
-
-/// A small round-cornered chip for compact controls.
-struct ChipButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 11, weight: .semibold))
-            .monospacedDigit()
-            .padding(.horizontal, 7)
-            .frame(minWidth: 24, minHeight: 22)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.primary.opacity(configuration.isPressed ? 0.2 : 0.1)))
-            .contentShape(Rectangle())
     }
 }
 
