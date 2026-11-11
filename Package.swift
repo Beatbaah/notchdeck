@@ -8,6 +8,11 @@ let package = Package(
         .executableTarget(
             name: "NotchDeck",
             path: "Sources/NotchDeck"
+        ),
+        .testTarget(
+            name: "NotchDeckTests",
+            dependencies: ["NotchDeck"],
+            path: "Tests/NotchDeckTests"
         )
     ],
     swiftLanguageVersions: [.v5]

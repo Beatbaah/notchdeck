@@ -31,9 +31,14 @@ final class SystemModel: ObservableObject {
         }
     }
 
+    // A slider drag fires many values; send one at a time, ending on the latest.
+    private lazy var volumeSender = LatestValueSender<Int> { level, done in
+        AppleScript.runAsync("set volume output volume \(level)") { _ in done() }
+    }
+
     func setVolume(_ value: Double) {
         volume = value
-        AppleScript.runAsync("set volume output volume \(Int(value.rounded()))")
+        volumeSender.send(Int(value.rounded()))
     }
 
     func toggleMute() {
