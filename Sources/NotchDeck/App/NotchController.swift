@@ -26,6 +26,9 @@ final class NotchController: NSObject {
     private var outsideSince: Date?
     private var holdOpenUntil = Date.distantPast
 
+    private var lastTitle: String?
+    private var peekHide: DispatchWorkItem?
+
     private var lastDragChangeCount = NSPasteboard(name: .drag).changeCount
     private var fileDragActive = false
 
@@ -127,7 +130,11 @@ final class NotchController: NSObject {
             .insetBy(dx: -8, dy: -8)
 
         if !state.isExpanded {
-            guard closedRect.contains(mouse) else { hoverSince = nil; return }
+            let over = closedRect.contains(mouse)
+            if over != state.isHovering {
+                withAnimation(Island.swell) { state.isHovering = over }
+            }
+            guard over else { hoverSince = nil; return }
             let start = hoverSince ?? now
             hoverSince = start
             let delay: TimeInterval = fileDragActive ? 0 : 0.12
@@ -167,11 +174,29 @@ final class NotchController: NSObject {
 
     private func updateLiveActivity() {
         let activity: LiveActivity = models.music.isPlaying ? .music : .none
+        let title = models.music.title
+        if title != lastTitle {
+            if PeekPolicy.shouldPeek(oldTitle: lastTitle, newTitle: title, playing: models.music.isPlaying, expanded: state.isExpanded) {
+                showPeek(title: title, artist: models.music.artist)
+            }
+            lastTitle = title
+        }
         if state.liveActivity != activity {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            withAnimation(Island.open) {
                 state.liveActivity = activity
             }
         }
+    }
+
+    /// A new track pops out of the closed notch for a few seconds.
+    private func showPeek(title: String, artist: String) {
+        peekHide?.cancel()
+        withAnimation(Island.open) { state.peek = NotchState.Peek(title: title, artist: artist) }
+        let hide = DispatchWorkItem { [weak self] in
+            withAnimation(Island.close) { self?.state.peek = nil }
+        }
+        peekHide = hide
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: hide)
     }
 
     // MARK: Open / close
@@ -186,7 +211,10 @@ final class NotchController: NSObject {
         models.system.refresh()
         models.music.refresh()
         panel?.ignoresMouseEvents = false
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+        peekHide?.cancel()
+        withAnimation(Island.open) {
+            state.isHovering = false
+            state.peek = nil
             state.isExpanded = true
         }
     }
@@ -208,7 +236,7 @@ final class NotchController: NSObject {
             panel.orderFrontRegardless()
         }
         panel.ignoresMouseEvents = true
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+        withAnimation(Island.close) {
             state.isExpanded = false
         }
     }

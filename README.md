@@ -20,6 +20,11 @@ On a Mac without a notch, it draws a black pill of the same size in the middle o
 
 While music plays and the notch is closed, it widens slightly to show a **live activity**:
 - **Music playing:** album artwork on the left, animated bars on the right.
+- **New track:** the notch grows down for a few seconds to show the title and artist, like an iPhone's
+  Dynamic Island.
+
+It moves like the Dynamic Island too: the closed notch swells as the pointer arrives, the panel stretches
+open with a soft bounce, and its content settles in a moment later.
 
 The gear icon (top right of the open notch) has **Launch at Login** and **Quit**. There's also a small
 menu bar icon with **Open Notch** and **Quit**.
