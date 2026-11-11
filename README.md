@@ -1,5 +1,7 @@
 # NotchDeck
 
+*Your MacBook notch shouldn't stay idle.*
+
 A menu bar utility for MacBooks that turns the camera notch into a panel. Move the pointer onto the
 notch and it opens. Move away and it closes.
 
@@ -74,3 +76,7 @@ build.sh
   because macOS offers no public, system-wide now-playing API to third-party apps.
 - Lyrics aren't included.
 - Brightness and Do Not Disturb have no public API, so they aren't in the System card.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
