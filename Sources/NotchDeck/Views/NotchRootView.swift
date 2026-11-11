@@ -13,7 +13,7 @@ struct NotchRootView: View {
             // Black like the Dynamic Island; the clear glass fades in only as the
             // island grows into the open panel (and out as it shrinks back).
             Color.black
-                .opacity(state.isExpanded ? 0 : 1) // the glass replaces it, never sits on it
+                .opacity(state.isExpanded || state.closedIslandHidden ? 0 : 1) // the glass replaces it, never sits on it
             GlassBackground()
                 .opacity(state.isExpanded ? 1 : 0)
             // The strip beside the physical notch stays black, fading into the glass.
@@ -34,6 +34,7 @@ struct NotchRootView: View {
             } else {
                 CollapsedView(state: state, music: models.music)
                     .frame(width: size.width, height: size.height, alignment: .top)
+                    .opacity(state.closedIslandHidden ? 0 : 1)
                     .environment(\.colorScheme, .dark)
                     .transition(.asymmetric(insertion: .opacity.animation(.easeIn(duration: 0.15).delay(0.12)),
                                             removal: .opacity.animation(.easeOut(duration: 0.08))))
@@ -185,6 +186,9 @@ struct SettingsMenu: View {
     var body: some View {
         Menu {
             Toggle("Launch at Login", isOn: $launchAtLogin)
+            if LoginItem.needsApproval {
+                Text("Allow NotchDeck in System Settings → General → Login Items")
+            }
             // Off by default: each browser asks for permission the first time.
             Toggle("Media from Browsers", isOn: $browsers)
             if browsers {
@@ -200,6 +204,11 @@ struct SettingsMenu: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .onChange(of: launchAtLogin) { LoginItem.set($0) }
+        .onChange(of: launchAtLogin) { wanted in
+            LoginItem.set(wanted)
+            // Show what macOS actually did (registering can fail or wait for approval).
+            let actual = LoginItem.isEnabled || LoginItem.needsApproval
+            if actual != wanted { launchAtLogin = actual }
+        }
     }
 }

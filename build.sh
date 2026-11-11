@@ -20,7 +20,7 @@ cp Support/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # NOTCHDECK_SIGN_IDENTITY="Apple Development: Your Name (TEAMID)".
 IDENTITY="${NOTCHDECK_SIGN_IDENTITY:-}"
 if [ -z "$IDENTITY" ]; then
-  IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | sed -n 's/.*"\(Apple Development: .*\)"/\1/p' | head -1)"
+  IDENTITY="$(security find-identity -v -p codesigning 2>/dev/null | sed -n 's/.*"\(Apple Development: .*\)"/\1/p' | head -1 || true)"
 fi
 if [ -n "$IDENTITY" ]; then
   codesign --force --sign "$IDENTITY" "$APP"

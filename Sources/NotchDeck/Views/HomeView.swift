@@ -97,6 +97,8 @@ struct ControlsCard: View {
                     .accessibilityLabel(system.muted ? "Unmute" : "Mute")
                     Slider(value: Binding(get: { system.volume }, set: { system.setVolume($0) }), in: 0...100)
                         .controlSize(.small)
+                        .disabled(!system.volumeAvailable)
+                        .help(system.volumeAvailable ? "Volume" : "This output's volume is set on the device")
                         .accessibilityLabel("Volume")
                 }
                 if let level = system.batteryLevel {

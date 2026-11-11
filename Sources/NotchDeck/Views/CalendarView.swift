@@ -8,12 +8,16 @@ extension Color {
 }
 
 enum EventTime {
-    static func text(_ item: CalendarItem) -> String {
-        if item.isAllDay { return "All day" }
+    private static let formatter: DateFormatter = {
         let f = DateFormatter()
         f.timeStyle = .short
         f.dateStyle = .none
-        return "\(f.string(from: item.start)) – \(f.string(from: item.end))"
+        return f
+    }()
+
+    static func text(_ item: CalendarItem) -> String {
+        if item.isAllDay { return "All day" }
+        return "\(formatter.string(from: item.start)) – \(formatter.string(from: item.end))"
     }
 }
 

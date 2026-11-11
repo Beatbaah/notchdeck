@@ -204,6 +204,9 @@ final class NotchController: NSObject {
             .insetBy(dx: -8, dy: -8)
 
         if !state.isExpanded {
+            let menuBarVisible = screen.frame.maxY - screen.visibleFrame.maxY > 0
+            let hidden = !PillPolicy.showsClosedPill(hasNotch: state.hasNotch, menuBarVisible: menuBarVisible)
+            if hidden != state.pillHidden { state.pillHidden = hidden }
             let over = closedRect.contains(mouse)
             if over != state.isHovering {
                 withAnimation(Island.swell) { state.isHovering = over }
@@ -211,8 +214,7 @@ final class NotchController: NSObject {
             guard over else { hoverSince = nil; return }
             let start = hoverSince ?? now
             hoverSince = start
-            let delay: TimeInterval = fileDragActive ? 0 : 0.12
-            if now.timeIntervalSince(start) >= delay {
+            if HoverPolicy.shouldOpen(hoveringFor: now.timeIntervalSince(start), fileDrag: fileDragActive) {
                 expand(tab: fileDragActive ? .shelf : nil)
             }
         } else {

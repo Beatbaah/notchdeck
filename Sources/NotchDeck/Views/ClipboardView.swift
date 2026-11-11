@@ -18,7 +18,16 @@ struct ClipboardView: View {
                             .buttonStyle(.plain).font(.caption).foregroundStyle(Color.glassSecondary)
                     }
                 }
-                if clipboard.items.isEmpty {
+                if clipboard.blocked {
+                    VStack(spacing: 6) {
+                        Image(systemName: "hand.raised.fill").font(.title2)
+                        Text("macOS is blocking NotchDeck from reading what you copy. Allow NotchDeck to paste from other apps in System Settings → Privacy & Security.")
+                            .multilineTextAlignment(.center)
+                    }
+                    .font(.callout)
+                    .foregroundStyle(Color.glassSecondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if clipboard.items.isEmpty {
                     Text("Text you copy shows up here. Click an entry to copy it again.")
                         .font(.callout)
                         .foregroundStyle(Color.glassSecondary)
@@ -26,10 +35,10 @@ struct ClipboardView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 2) {
-                            ForEach(clipboard.items, id: \.self) { item in
-                                ClipRow(text: item,
-                                        onCopy: { clipboard.copy(item); showCopied(item) },
-                                        onDelete: { clipboard.remove(item) })
+                            ForEach(clipboard.items) { item in
+                                ClipRow(preview: item.preview,
+                                        onCopy: { clipboard.copy(item.text); showCopied(item.text) },
+                                        onDelete: { clipboard.remove(item.text) })
                             }
                         }
                     }
@@ -47,14 +56,10 @@ struct ClipboardView: View {
 }
 
 struct ClipRow: View {
-    let text: String
+    let preview: String
     let onCopy: () -> Void
     let onDelete: () -> Void
     @State private var hovering = false
-
-    private var preview: String {
-        text.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces)
-    }
 
     var body: some View {
         HStack(spacing: 8) {

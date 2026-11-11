@@ -34,7 +34,7 @@ menu bar icon with **Open Notch** and **Quit**.
 Requires macOS 13 Ventura or later and Xcode (or the Command Line Tools: `xcode-select --install`).
 
 ```bash
-cd NotchDeck
+cd notchdeck
 ./build.sh
 cp -R build/NotchDeck.app /Applications/
 open /Applications/NotchDeck.app
@@ -46,7 +46,7 @@ Launch at Login need that.
 
 ### Permissions
 
-- **Automation (Music / Spotify):** the first time a player is open, macOS asks whether NotchDeck
+- **Automation (Music, Spotify, VLC):** the first time a player is open, macOS asks whether NotchDeck
   may control it. Click **OK**. To change this later, go to System Settings → Privacy & Security →
   Automation.
 - **Calendar:** asked only when you press **Show my calendar** on the Calendar tab.

@@ -6,6 +6,8 @@ final class HotKey {
     static let displayText = "⌃⌥N"
 
     private var ref: EventHotKeyRef?
+    /// False when another app already owns these keys.
+    private(set) var isRegistered = false
     private var handler: EventHandlerRef?
     private let action: () -> Void
 
@@ -20,7 +22,7 @@ final class HotKey {
             return noErr
         }, 1, &spec, me, &handler)
         let id = EventHotKeyID(signature: OSType(0x4E444B59), id: 1) // "NDKY"
-        RegisterEventHotKey(keyCode, modifiers, id, GetApplicationEventTarget(), 0, &ref)
+        isRegistered = RegisterEventHotKey(keyCode, modifiers, id, GetApplicationEventTarget(), 0, &ref) == noErr
     }
 
     deinit {

@@ -47,6 +47,11 @@ final class NotchState: ObservableObject {
     @Published var isHovering = false
     /// A new track, shown briefly below the closed notch (like a Dynamic Island alert).
     @Published var peek: Peek?
+    /// No notch and no menu bar (full screen): the closed pill is hidden (see `PillPolicy`).
+    @Published var pillHidden = false
+
+    /// The closed island is invisible right now (hover or a new track brings it back).
+    var closedIslandHidden: Bool { pillHidden && !isHovering && peek == nil }
 
     struct Peek: Equatable {
         let title: String
@@ -120,5 +125,24 @@ enum PollPolicy {
 enum PeekPolicy {
     static func shouldPeek(oldTitle: String?, newTitle: String, playing: Bool, expanded: Bool) -> Bool {
         !expanded && playing && !newTitle.isEmpty && newTitle != oldTitle
+    }
+}
+
+/// When resting on the closed notch opens it: long enough that moving the pointer past
+/// it (to the menu bar items beside it) doesn't, at once for a file being dragged in.
+enum HoverPolicy {
+    static let delay: TimeInterval = 0.2
+
+    static func shouldOpen(hoveringFor: TimeInterval, fileDrag: Bool) -> Bool {
+        fileDrag || hoveringFor >= delay
+    }
+}
+
+/// On a Mac without a notch the closed island is a drawn pill. While the menu bar is
+/// hidden (an app is full screen) it would sit over the video or slides, so it hides;
+/// hovering still opens it.
+enum PillPolicy {
+    static func showsClosedPill(hasNotch: Bool, menuBarVisible: Bool) -> Bool {
+        hasNotch || menuBarVisible
     }
 }

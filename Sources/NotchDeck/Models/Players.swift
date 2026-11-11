@@ -61,7 +61,8 @@ struct NowPlaying: Equatable {
     var artist: String
     var album: String
     var artworkURL: String?
-    /// For a browser: "window:tab" of the tab that's playing.
+    /// For a browser: "windowID:tab" of the tab that's playing (a window's id stays
+    /// the same when windows are reordered; its index doesn't).
     var ref: String?
     /// Seconds into the track, and its length; nil when unknown (a live stream).
     var position: Double? = nil
@@ -256,8 +257,8 @@ enum PlayerScripts {
             let (w, t) = (parts.first ?? "1", parts.count > 1 ? parts[1] : "1")
             let js = [jsPlayPause, jsNext, jsPrevious][command.index]
             return now.player == .safari
-                ? "tell application \"Safari\" to do JavaScript \"\(js)\" in tab \(t) of window \(w)"
-                : "tell application \"\(now.player.appName)\" to execute tab \(t) of window \(w) javascript \"\(js)\""
+                ? "tell application \"Safari\" to do JavaScript \"\(js)\" in tab \(t) of window id \(w)"
+                : "tell application \"\(now.player.appName)\" to execute tab \(t) of window id \(w) javascript \"\(js)\""
         }
     }
 
@@ -278,8 +279,8 @@ enum PlayerScripts {
             let (w, t) = (parts.first ?? "1", parts.count > 1 ? parts[1] : "1")
             let js = "(function(){" + jsFindMedia + "if(e)e.currentTime=" + at + ";})()"
             return now.player == .safari
-                ? "tell application \"Safari\" to do JavaScript \"\(js)\" in tab \(t) of window \(w)"
-                : "tell application \"\(now.player.appName)\" to execute tab \(t) of window \(w) javascript \"\(js)\""
+                ? "tell application \"Safari\" to do JavaScript \"\(js)\" in tab \(t) of window id \(w)"
+                : "tell application \"\(now.player.appName)\" to execute tab \(t) of window id \(w) javascript \"\(js)\""
         }
     }
 
@@ -340,7 +341,7 @@ enum PlayerScripts {
                     if (\(hostTest)) or (wi = 1 and ti = active) then
                         try
                             set r to \(run)
-                            if r is not missing value and r is not "" then return "{\\"ref\\":\\"" & wi & ":" & ti & "\\"," & (text 2 thru -1 of r)
+                            if r is not missing value and r is not "" then return "{\\"ref\\":\\"" & (id of w) & ":" & ti & "\\"," & (text 2 thru -1 of r)
                         on error m
                             if m contains "JavaScript" then return "\(javaScriptOffReply)"
                         end try

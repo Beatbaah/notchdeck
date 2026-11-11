@@ -17,8 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let controller = NotchController(models: Models())
         controller.start()
         self.controller = controller
-        setUpStatusItem()
         hotKey = HotKey { [weak controller] in controller?.toggle() }
+        if hotKey?.isRegistered != true { NSLog("NotchDeck: \(HotKey.displayText) is taken by another app") }
+        setUpStatusItem()
     }
 
     /// A small menu bar icon, so the app can always be opened or quit even if the notch is hidden.
@@ -28,7 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                      accessibilityDescription: "NotchDeck")
 
         let menu = NSMenu()
-        let open = NSMenuItem(title: "Open Notch  \(HotKey.displayText)", action: #selector(openNotch), keyEquivalent: "")
+        let open = NSMenuItem(title: hotKey?.isRegistered == true ? "Open Notch  \(HotKey.displayText)" : "Open Notch", action: #selector(openNotch), keyEquivalent: "")
         open.target = self
         menu.addItem(open)
         menu.addItem(.separator())

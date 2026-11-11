@@ -5,6 +5,8 @@ import IOKit.ps
 final class SystemModel: ObservableObject {
     @Published var volume: Double = 50
     @Published var muted = false
+    /// False when the current output has no software volume (the slider is then disabled).
+    @Published private(set) var volumeAvailable = true
     @Published private(set) var batteryLevel: Int?
     @Published private(set) var isCharging = false
 
@@ -24,7 +26,13 @@ final class SystemModel: ObservableObject {
 
     func refreshVolume() {
         AppleScript.runSystem("output volume of (get volume settings)") { [weak self] result in
-            if let result { self?.volume = Double(result.int32Value) }
+            guard let self, let result else { return }
+            if let level = Self.volume(from: result) {
+                self.volume = level
+                self.volumeAvailable = true
+            } else {
+                self.volumeAvailable = false
+            }
         }
         AppleScript.runSystem("output muted of (get volume settings)") { [weak self] result in
             if let result { self?.muted = result.booleanValue }
@@ -83,5 +91,16 @@ final class SystemModel: ObservableObject {
         case 13..<38: return "battery.25"
         default: return "battery.0"
         }
+    }
+}
+
+extension SystemModel {
+    /// The output volume, or nil when the output has none (HDMI and some USB devices reply `missing value`).
+    static func volume(from result: NSAppleEventDescriptor) -> Double? {
+        let missing: DescType = 0x6D73_6E67 // 'msng'
+        if result.descriptorType == missing || (result.descriptorType == typeType && result.typeCodeValue == missing) {
+            return nil
+        }
+        return Double(result.int32Value)
     }
 }
