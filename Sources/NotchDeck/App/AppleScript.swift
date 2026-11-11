@@ -10,10 +10,16 @@ enum AppleScript {
     /// Synchronous. Call only from `queue`.
     @discardableResult
     static func run(_ source: String) -> NSAppleEventDescriptor? {
+        runReportingError(source).result
+    }
+
+    /// Also gives the error number on failure (-1743: the user hasn't allowed NotchDeck to control the app).
+    static func runReportingError(_ source: String) -> (result: NSAppleEventDescriptor?, errorNumber: Int?) {
         var error: NSDictionary?
-        guard let script = NSAppleScript(source: source) else { return nil }
+        guard let script = NSAppleScript(source: source) else { return (nil, nil) }
         let result = script.executeAndReturnError(&error)
-        return error == nil ? result : nil
+        guard let error else { return (result, nil) }
+        return (nil, error[NSAppleScript.errorNumber] as? Int ?? 0)
     }
 
     /// Runs only while the app is open. Synchronous; call only from `queue`.

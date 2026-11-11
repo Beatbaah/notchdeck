@@ -54,6 +54,9 @@ Launch at Login need that.
   **Allow JavaScript from Apple Events** (Safari: Develop menu; Chrome, Brave, Edge: View → Developer).
   NotchDeck checks tabs on known media sites (YouTube, SoundCloud, Spotify Web, Apple Music, Audiomack,
   Boomplay, Deezer, Tidal, Mixcloud, Twitch, Vimeo) and the active tab of the front window.
+  **Be aware:** this browser setting isn't limited to NotchDeck. Any app you've given Automation
+  permission for that browser can then run scripts in all of its tabs, including sites you're signed
+  in to. Leave it off if you don't need browser media in the notch.
 - Nothing else is needed. Notch hover works by polling the pointer position, so there's no
   Accessibility prompt.
 

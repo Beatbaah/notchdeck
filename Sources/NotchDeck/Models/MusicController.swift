@@ -14,6 +14,8 @@ final class MusicController: ObservableObject {
     /// Seconds in and length at the last check (nil: no bar, e.g. a live stream).
     @Published private(set) var position: Double?
     @Published private(set) var duration: Double?
+    /// Why nothing can be read from a player that's open (shown only when nothing plays).
+    @Published private(set) var problem: PlayerProblem?
     private(set) var positionCheckedAt = Date()
 
     /// Set by the notch: players are asked less often while nobody's looking (see `PollPolicy`).
@@ -53,13 +55,14 @@ final class MusicController: ObservableObject {
         lastPoll = Date()
         let running = Set(NSWorkspace.shared.runningApplications.compactMap { $0.bundleIdentifier })
         let candidates = Player.toQuery(running: running, browsersOn: UserDefaults.standard.bool(forKey: Self.browsersKey))
-        guard !candidates.isEmpty else { apply(nil); return }
+        guard !candidates.isEmpty else { problem = nil; apply(nil); return }
         busy = true
         AppleScript.queue.async { [weak self] in
-            let pick = NowPlaying.pick(candidates.compactMap(PlayerScripts.query))
+            let picked = NowPlaying.pick(outcomes: candidates.map(PlayerScripts.query))
             DispatchQueue.main.async {
                 self?.busy = false
-                self?.apply(pick)
+                if self?.problem != picked.problem { self?.problem = picked.problem }
+                self?.apply(picked.now)
             }
         }
     }

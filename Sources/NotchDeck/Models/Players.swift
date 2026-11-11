@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 /// Players NotchDeck can read and control. All are asked over AppleScript,
 /// and only while already open (scripting a closed app would launch it).
@@ -111,14 +111,68 @@ struct NowPlaying: Equatable {
     }
 }
 
+/// Why a player can't be read, shown on Home instead of "Nothing playing".
+enum PlayerProblem: Equatable {
+    /// macOS Automation permission was refused.
+    case automationDenied(Player)
+    /// The browser's "Allow JavaScript from Apple Events" is off.
+    case javaScriptOff(Player)
+
+    var message: String {
+        switch self {
+        case .automationDenied(let p):
+            return "Allow NotchDeck to control \(p.displayName) in System Settings → Privacy & Security → Automation."
+        case .javaScriptOff(let p):
+            let menu = p == .safari ? "the Develop menu" : "View → Developer"
+            return "Turn on \"Allow JavaScript from Apple Events\" in \(p.displayName) (\(menu)) to see its media."
+        }
+    }
+
+    var settingsURL: URL? {
+        switch self {
+        case .automationDenied:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")
+        case .javaScriptOff:
+            return nil
+        }
+    }
+}
+
+/// What asking one player gave.
+enum QueryOutcome: Equatable {
+    case playing(NowPlaying), nothing, problem(PlayerProblem)
+}
+
+extension NowPlaying {
+    /// Music from any player wins; a problem is only worth showing when nothing plays.
+    static func pick(outcomes: [QueryOutcome]) -> (now: NowPlaying?, problem: PlayerProblem?) {
+        let found = outcomes.compactMap { if case .playing(let n) = $0 { return n } else { return nil } }
+        if let now = pick(found) { return (now, nil) }
+        let problem = outcomes.lazy.compactMap { if case .problem(let p) = $0 { return p } else { return nil } }.first
+        return (nil, problem)
+    }
+}
+
 /// The AppleScript for each player. Runs on `AppleScript.queue`.
 enum PlayerScripts {
+    /// What a browser query returns when the page can't be scripted.
+    static let javaScriptOffReply = "JSOFF"
+
+    static func outcome(output: String?, errorNumber: Int?, player: Player) -> QueryOutcome {
+        if errorNumber == -1743 { return .problem(.automationDenied(player)) }
+        guard let output else { return .nothing }
+        if output == javaScriptOffReply { return .problem(.javaScriptOff(player)) }
+        let parsed = player.isBrowser ? NowPlaying.parseBrowser(output, player: player) : NowPlaying.parse(output, player: player)
+        return parsed.map(QueryOutcome.playing) ?? .nothing
+    }
+
     private static let sep = NowPlaying.separator
 
-    static func query(_ player: Player) -> NowPlaying? {
-        guard let source = querySource(player) else { return nil }
-        guard let output = AppleScript.run(source, ifRunning: player.bundleID)?.stringValue else { return nil }
-        return player.isBrowser ? NowPlaying.parseBrowser(output, player: player) : NowPlaying.parse(output, player: player)
+    static func query(_ player: Player) -> QueryOutcome {
+        guard let source = querySource(player),
+              !NSRunningApplication.runningApplications(withBundleIdentifier: player.bundleID).isEmpty else { return .nothing }
+        let (result, errorNumber) = AppleScript.runReportingError(source)
+        return outcome(output: result?.stringValue, errorNumber: errorNumber, player: player)
     }
 
     /// The query script for a player (also compiled by the tests).
@@ -287,6 +341,8 @@ enum PlayerScripts {
                         try
                             set r to \(run)
                             if r is not missing value and r is not "" then return "{\\"ref\\":\\"" & wi & ":" & ti & "\\"," & (text 2 thru -1 of r)
+                        on error m
+                            if m contains "JavaScript" then return "\(javaScriptOffReply)"
                         end try
                     end if
                 end repeat

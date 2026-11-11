@@ -52,26 +52,40 @@ struct ClipRow: View {
     let onDelete: () -> Void
     @State private var hovering = false
 
+    private var preview: String {
+        text.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces)
+    }
+
     var body: some View {
         HStack(spacing: 8) {
-            Text(text.replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespaces))
-                .font(.system(size: 12))
-                .lineLimit(1)
-                .truncationMode(.tail)
-            Spacer(minLength: 0)
+            // A real button, so VoiceOver and the keyboard can copy it too.
+            Button(action: onCopy) {
+                HStack {
+                    Text(preview)
+                        .font(.system(size: 12))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(preview)
+            .accessibilityHint("Copies it again")
+            // Delete shows on hover; VoiceOver users get it as an action on the row.
+            .accessibilityAction(named: "Delete", onDelete)
             if hovering {
                 Button(action: onDelete) {
                     Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.glassSecondary)
+                .accessibilityLabel("Delete")
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(hovering ? 0.1 : 0)))
-        .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .onTapGesture(perform: onCopy)
     }
 }

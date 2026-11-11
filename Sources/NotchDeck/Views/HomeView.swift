@@ -17,7 +17,20 @@ struct MusicCard: View {
 
     var body: some View {
         Card {
-            if music.player == nil, let next = CalendarAgenda.next(calendar.items, now: Date()) {
+            if music.player == nil, let problem = music.problem {
+                // A player is open but NotchDeck isn't allowed to read it.
+                VStack(spacing: 8) {
+                    Image(systemName: "lock.fill").font(.title2).foregroundStyle(Color.glassSecondary)
+                    Text(problem.message).font(.callout).foregroundStyle(Color.glassSecondary)
+                        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+                    if let url = problem.settingsURL {
+                        Button("Open System Settings") { NSWorkspace.shared.open(url) }
+                            .buttonStyle(PillButtonStyle())
+                            .frame(maxWidth: 200)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if music.player == nil, let next = CalendarAgenda.next(calendar.items, now: Date()) {
                 // Nothing playing: the space shows what's next today instead.
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Next", systemImage: "calendar").font(.caption).foregroundStyle(Color.glassSecondary)
