@@ -4,13 +4,31 @@ import AppKit
 final class ShelfModel: ObservableObject {
     @Published private(set) var files: [URL] = []
 
-    private let defaultsKey = "shelf.paths"
+    // Bookmarks follow a file when it's moved or renamed; plain paths (the
+    // first version) don't, so they're only read once, then replaced.
+    private let bookmarksKey = "shelf.bookmarks"
+    private let legacyPathsKey = "shelf.paths"
+    private let defaults: UserDefaults
 
-    init() {
-        let paths = UserDefaults.standard.stringArray(forKey: defaultsKey) ?? []
-        files = paths
-            .filter { FileManager.default.fileExists(atPath: $0) }
-            .map { URL(fileURLWithPath: $0) }
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        if let bookmarks = defaults.array(forKey: bookmarksKey) as? [Data] {
+            files = bookmarks.compactMap(Self.resolve)
+        } else {
+            files = (defaults.stringArray(forKey: legacyPathsKey) ?? [])
+                .filter { FileManager.default.fileExists(atPath: $0) }
+                .map { URL(fileURLWithPath: $0) }
+        }
+        save()
+    }
+
+    /// The file's current location, or nil if it no longer exists.
+    private static func resolve(_ bookmark: Data) -> URL? {
+        var stale = false
+        guard let url = try? URL(resolvingBookmarkData: bookmark, options: [.withoutUI, .withoutMounting],
+                                 relativeTo: nil, bookmarkDataIsStale: &stale),
+              FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return url.standardizedFileURL
     }
 
     func add(_ url: URL) {
@@ -43,6 +61,8 @@ final class ShelfModel: ObservableObject {
     }
 
     private func save() {
-        UserDefaults.standard.set(files.map { $0.path }, forKey: defaultsKey)
+        let bookmarks = files.compactMap { try? $0.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil) }
+        defaults.set(bookmarks, forKey: bookmarksKey)
+        defaults.removeObject(forKey: legacyPathsKey)
     }
 }
