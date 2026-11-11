@@ -94,15 +94,25 @@ struct TabButton: View {
     }
 }
 
-/// macOS frosted glass that blends with the windows behind the panel, like
-/// menus and Control Centre. Light or dark follows the system appearance.
+/// The open panel's background: the system's Liquid Glass (macOS 26+), which
+/// follows the user's settings (Clear or Tinted glass, Reduce Transparency).
+/// Older macOS gets the frosted material macOS used before.
 struct GlassBackground: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
+    var cornerRadius: CGFloat = 24
+
+    func makeNSView(context: Context) -> NSView {
+        if #available(macOS 26.0, *) {
+            let glass = NSGlassEffectView()
+            glass.style = .regular
+            glass.cornerRadius = cornerRadius
+            return glass
+        }
         let view = NSVisualEffectView()
         view.material = .popover
         view.blendingMode = .behindWindow
         view.state = .active
         return view
     }
-    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+
+    func updateNSView(_ view: NSView, context: Context) {}
 }
