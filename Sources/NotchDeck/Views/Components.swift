@@ -10,9 +10,17 @@ struct Card<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.primary.opacity(0.07))
+                    // Clear glass stays readable by dimming only where content sits.
+                    .fill(Color.black.opacity(0.22))
             )
+            .foregroundStyle(Color.white)
     }
+}
+
+/// Text colours on clear glass: brighter than the system's faint greys.
+extension Color {
+    static let glassSecondary = Color.white.opacity(0.75)
+    static let glassTertiary = Color.white.opacity(0.6)
 }
 
 struct PillButtonStyle: ButtonStyle {
@@ -22,7 +30,7 @@ struct PillButtonStyle: ButtonStyle {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity)
-            .background(Capsule().fill(Color.primary.opacity(configuration.isPressed ? 0.2 : 0.1)))
+            .background(Capsule().fill(Color.white.opacity(configuration.isPressed ? 0.28 : 0.16)))
             .contentShape(Capsule())
     }
 }
@@ -38,10 +46,10 @@ struct ArtworkView: View {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
                 ZStack {
-                    Color.primary.opacity(0.1)
+                    Color.white.opacity(0.12)
                     Image(systemName: "music.note")
                         .font(.system(size: size * 0.4))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.glassSecondary)
                 }
             }
         }

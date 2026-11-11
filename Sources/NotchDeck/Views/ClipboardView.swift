@@ -8,20 +8,20 @@ struct ClipboardView: View {
         Card {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Label("Clipboard history", systemImage: "doc.on.clipboard").font(.caption).foregroundStyle(.secondary)
+                    Label("Clipboard history", systemImage: "doc.on.clipboard").font(.caption).foregroundStyle(Color.glassSecondary)
                     Spacer()
                     if copied != nil {
                         Text("Copied").font(.caption).foregroundStyle(.green)
                     }
                     if !clipboard.items.isEmpty {
                         Button("Clear") { clipboard.clear() }
-                            .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
+                            .buttonStyle(.plain).font(.caption).foregroundStyle(Color.glassSecondary)
                     }
                 }
                 if clipboard.items.isEmpty {
                     Text("Text you copy shows up here. Click an entry to copy it again.")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.glassSecondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
@@ -64,7 +64,7 @@ struct ClipRow: View {
                     Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.glassSecondary)
             }
         }
         .padding(.horizontal, 8)

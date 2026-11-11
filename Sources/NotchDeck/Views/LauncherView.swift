@@ -37,7 +37,7 @@ private struct AppTile: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 40, height: 40)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.glassSecondary)
             Text(name)
                 .font(.system(size: 10))
                 .lineLimit(1)

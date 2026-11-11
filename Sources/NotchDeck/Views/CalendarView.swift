@@ -39,15 +39,15 @@ struct CalendarView: View {
         let sections = CalendarAgenda.sections(calendar.items, now: Date())
         if sections.isEmpty {
             VStack(spacing: 6) {
-                Image(systemName: "calendar").font(.title2).foregroundStyle(.secondary)
-                Text("Nothing on today or tomorrow").font(.callout).foregroundStyle(.secondary)
+                Image(systemName: "calendar").font(.title2).foregroundStyle(Color.glassSecondary)
+                Text("Nothing on today or tomorrow").font(.callout).foregroundStyle(Color.glassSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(sections, id: \.title) { section in
-                        Text(section.title).font(.caption).foregroundStyle(.secondary)
+                        Text(section.title).font(.caption).foregroundStyle(Color.glassSecondary)
                         ForEach(section.items) { item in
                             Button { calendar.openCalendarApp() } label: { EventRow(item: item) }
                                 .buttonStyle(.plain)
@@ -61,8 +61,8 @@ struct CalendarView: View {
 
     private func prompt(icon: String, text: String, button: String, action: @escaping () -> Void) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: icon).font(.title2).foregroundStyle(.secondary)
-            Text(text).font(.callout).foregroundStyle(.secondary)
+            Image(systemName: icon).font(.title2).foregroundStyle(Color.glassSecondary)
+            Text(text).font(.callout).foregroundStyle(Color.glassSecondary)
             Button(button, action: action).buttonStyle(PillButtonStyle())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -78,7 +78,7 @@ struct EventRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 Text([EventTime.text(item), item.location].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                    .font(.system(size: 11)).foregroundStyle(Color.glassSecondary).lineLimit(1)
             }
             Spacer(minLength: 0)
         }

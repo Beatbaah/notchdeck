@@ -9,11 +9,11 @@ struct ShelfView: View {
         Card {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Label("File Shelf", systemImage: "tray.full").font(.caption).foregroundStyle(.secondary)
+                    Label("File Shelf", systemImage: "tray.full").font(.caption).foregroundStyle(Color.glassSecondary)
                     Spacer()
                     if !shelf.files.isEmpty {
                         Button("Clear") { shelf.clear() }
-                            .buttonStyle(.plain).font(.caption).foregroundStyle(.secondary)
+                            .buttonStyle(.plain).font(.caption).foregroundStyle(Color.glassSecondary)
                     }
                 }
                 if shelf.files.isEmpty {
@@ -23,7 +23,7 @@ struct ShelfView: View {
                         Text("then drag them out wherever you need them.")
                     }
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.glassSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {

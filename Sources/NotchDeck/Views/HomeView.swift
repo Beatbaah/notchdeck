@@ -20,25 +20,25 @@ struct MusicCard: View {
             if music.player == nil, let next = CalendarAgenda.next(calendar.items, now: Date()) {
                 // Nothing playing: the space shows what's next today instead.
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Next", systemImage: "calendar").font(.caption).foregroundStyle(.secondary)
+                    Label("Next", systemImage: "calendar").font(.caption).foregroundStyle(Color.glassSecondary)
                     EventRow(item: next)
                     Spacer(minLength: 0)
-                    Text("Play in Music, Spotify, VLC or a browser").font(.caption).foregroundStyle(.tertiary)
+                    Text("Play in Music, Spotify, VLC or a browser").font(.caption).foregroundStyle(Color.glassTertiary)
                 }
             } else if music.player == nil {
                 VStack(spacing: 6) {
-                    Image(systemName: "music.note").font(.title2).foregroundStyle(.secondary)
-                    Text("Nothing playing").font(.callout).foregroundStyle(.secondary)
-                    Text("Play in Music, Spotify, VLC or a browser").font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                    Image(systemName: "music.note").font(.title2).foregroundStyle(Color.glassSecondary)
+                    Text("Nothing playing").font(.callout.weight(.semibold)).foregroundStyle(Color.glassSecondary)
+                    Text("Play in Music, Spotify, VLC or a browser").font(.caption).foregroundStyle(Color.glassTertiary).multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HStack(spacing: 12) {
                     ArtworkView(image: music.artwork, size: 96, corner: 12)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(music.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
-                        Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
-                        Text(music.player?.displayName ?? "").font(.caption2).foregroundStyle(.tertiary)
+                        Text(music.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
+                        Text(music.artist).font(.system(size: 12)).foregroundStyle(Color.glassSecondary).lineLimit(1)
+                        Text(music.player?.displayName ?? "").font(.caption2).foregroundStyle(Color.glassTertiary)
                         Spacer(minLength: 4)
                         TrackProgress(music: music)
                         HStack(spacing: 20) {
@@ -91,7 +91,7 @@ struct ControlsCard: View {
                         Image(systemName: system.batterySymbol).frame(width: 18)
                         Text("\(level)%\(system.isCharging ? " · charging" : "")")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.glassSecondary)
                     }
                 }
                 Spacer(minLength: 0)
@@ -129,7 +129,7 @@ struct TrackProgress: View {
                         Text("-" + TrackTime.text(duration - at))
                     }
                     .font(.system(size: 10).monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.glassSecondary)
                 }
             }
         }

@@ -9,7 +9,7 @@ struct NotesView: View {
                 if text.isEmpty {
                     Text("Jot something down… (saved automatically)")
                         .font(.system(size: 13))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.glassTertiary)
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                 }
