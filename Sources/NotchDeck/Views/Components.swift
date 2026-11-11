@@ -94,8 +94,9 @@ struct TabButton: View {
     }
 }
 
-/// The open panel's background: the system's clear Liquid Glass (macOS 26+),
-/// which still honours Reduce Transparency.
+/// The open panel's background: the system's clear Liquid Glass (macOS 26+)
+/// with a smoky tint, like a see-through Dynamic Island. It still honours
+/// Reduce Transparency.
 /// Older macOS gets the frosted material macOS used before.
 struct GlassBackground: NSViewRepresentable {
     var cornerRadius: CGFloat = 24
@@ -105,10 +106,14 @@ struct GlassBackground: NSViewRepresentable {
             let glass = NSGlassEffectView()
             glass.style = .clear
             glass.cornerRadius = cornerRadius
+            // A light smoky tint: still see-through, but dark enough for white text.
+            glass.tintColor = NSColor.black.withAlphaComponent(0.38)
+            glass.appearance = NSAppearance(named: .darkAqua)
             return glass
         }
         let view = NSVisualEffectView()
-        view.material = .popover
+        view.appearance = NSAppearance(named: .darkAqua)
+        view.material = .hudWindow
         view.blendingMode = .behindWindow
         view.state = .active
         return view

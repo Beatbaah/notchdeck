@@ -13,6 +13,7 @@ struct NotchRootView: View {
             // Black like the Dynamic Island; the clear glass fades in only as the
             // island grows into the open panel (and out as it shrinks back).
             Color.black
+                .opacity(state.isExpanded ? 0 : 1) // the glass replaces it, never sits on it
             GlassBackground()
                 .opacity(state.isExpanded ? 1 : 0)
             // The strip beside the physical notch stays black, fading into the glass.
@@ -41,6 +42,9 @@ struct NotchRootView: View {
         .frame(width: size.width, height: size.height, alignment: .top)
         .clipShape(shape)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Dark like the Dynamic Island in either system appearance: white text
+        // stays readable over whatever window is behind the clear glass.
+        .environment(\.colorScheme, .dark)
     }
 
     /// The menu bar strip's share of the open panel's height.
