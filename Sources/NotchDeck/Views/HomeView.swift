@@ -5,7 +5,7 @@ struct HomeView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            MusicCard(music: models.music)
+            MusicCard(music: models.music, calendar: models.calendar)
             TimerCard(timer: models.timer).frame(width: 160)
             SystemCard(system: models.system).frame(width: 150)
         }
@@ -14,14 +14,23 @@ struct HomeView: View {
 
 struct MusicCard: View {
     @ObservedObject var music: MusicController
+    @ObservedObject var calendar: CalendarModel
 
     var body: some View {
         Card {
-            if music.player == nil {
+            if music.player == nil, let next = CalendarAgenda.next(calendar.items, now: Date()) {
+                // Nothing playing: the space shows what's next today instead.
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Next", systemImage: "calendar").font(.caption).foregroundStyle(.secondary)
+                    EventRow(item: next)
+                    Spacer(minLength: 0)
+                    Text("Play in Music, Spotify, VLC or a browser").font(.caption).foregroundStyle(.tertiary)
+                }
+            } else if music.player == nil {
                 VStack(spacing: 6) {
                     Image(systemName: "music.note").font(.title2).foregroundStyle(.secondary)
                     Text("Nothing playing").font(.callout).foregroundStyle(.secondary)
-                    Text("Open Music or Spotify").font(.caption).foregroundStyle(.tertiary)
+                    Text("Play in Music, Spotify, VLC or a browser").font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -30,7 +39,7 @@ struct MusicCard: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(music.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
                         Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
-                        Text(music.player?.rawValue ?? "").font(.caption2).foregroundStyle(.tertiary)
+                        Text(music.player?.displayName ?? "").font(.caption2).foregroundStyle(.tertiary)
                         Spacer(minLength: 6)
                         HStack(spacing: 20) {
                             controlButton("backward.fill", size: 14) { music.previous() }

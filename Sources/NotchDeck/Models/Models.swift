@@ -8,4 +8,5 @@ final class Models {
     let shelf = ShelfModel()
     let launcher = LauncherModel()
     let system = SystemModel()
+    let calendar = CalendarModel()
 }

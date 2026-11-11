@@ -100,6 +100,7 @@ struct ExpandedView: View {
     @ViewBuilder private var content: some View {
         switch state.tab {
         case .home: HomeView(models: models)
+        case .calendar: CalendarView(calendar: models.calendar)
         case .shelf: ShelfView(shelf: models.shelf)
         case .clipboard: ClipboardView(clipboard: models.clipboard)
         case .notes: NotesView()
@@ -126,10 +127,16 @@ struct BatteryBadge: View {
 
 struct SettingsMenu: View {
     @State private var launchAtLogin = LoginItem.isEnabled
+    @AppStorage(MusicController.browsersKey) private var browsers = false
 
     var body: some View {
         Menu {
             Toggle("Launch at Login", isOn: $launchAtLogin)
+            // Off by default: each browser asks for permission the first time.
+            Toggle("Media from Browsers", isOn: $browsers)
+            if browsers {
+                Text("Turn on \"Allow JavaScript from Apple Events\" in each browser")
+            }
             Divider()
             Button("Quit NotchDeck") { NSApp.terminate(nil) }
         } label: {

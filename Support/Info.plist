@@ -25,6 +25,10 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>NotchDeck reads the current song from Music or Spotify and sends play, pause and skip commands to them.</string>
+	<string>NotchDeck reads what's playing in Music, Spotify, VLC or a browser tab (if you turn on Media from Browsers) and sends play, pause and skip commands to it.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>NotchDeck shows today's and tomorrow's events in the notch. Nothing leaves your Mac.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>NotchDeck shows today's and tomorrow's events in the notch. Nothing leaves your Mac.</string>
 </dict>
 </plist>

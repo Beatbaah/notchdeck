@@ -1,13 +1,14 @@
 import SwiftUI
 
 enum NotchTab: String, CaseIterable, Identifiable {
-    case home, shelf, clipboard, notes, apps
+    case home, calendar, shelf, clipboard, notes, apps
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
         case .home: return "house.fill"
+        case .calendar: return "calendar"
         case .shelf: return "tray.full.fill"
         case .clipboard: return "doc.on.clipboard.fill"
         case .notes: return "note.text"
@@ -18,6 +19,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .home: return "Home"
+        case .calendar: return "Calendar"
         case .shelf: return "File Shelf"
         case .clipboard: return "Clipboard"
         case .notes: return "Notes"
