@@ -9,7 +9,8 @@ final class PlayerScriptsCompileTests: XCTestCase {
         var checked: [String] = []
         for player in Player.allCases where NSWorkspace.shared.urlForApplication(withBundleIdentifier: player.bundleID) != nil {
             let sample = NowPlaying(player: player, isPlaying: true, title: "t", artist: "", album: "", artworkURL: nil, ref: "1:1")
-            let sources = [PlayerScripts.querySource(player)!] + [.playPause, .next, .previous].map { PlayerScripts.command($0, to: sample) }
+            let sources = [PlayerScripts.querySource(player)!, PlayerScripts.seek(to: 42.5, in: sample)]
+                + [.playPause, .next, .previous].map { PlayerScripts.command($0, to: sample) }
             for source in sources {
                 var error: NSDictionary?
                 let script = NSAppleScript(source: source)!

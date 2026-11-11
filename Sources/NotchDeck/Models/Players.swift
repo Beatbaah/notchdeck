@@ -63,15 +63,31 @@ struct NowPlaying: Equatable {
     var artworkURL: String?
     /// For a browser: "window:tab" of the tab that's playing.
     var ref: String?
+    /// Seconds into the track, and its length; nil when unknown (a live stream).
+    var position: Double? = nil
+    var duration: Double? = nil
 
     static let separator = "|~|"
 
-    /// Music, Spotify and VLC reply "playing|~|title|~|artist|~|album[|~|artworkURL]" or "stopped".
+    /// Music, Spotify and VLC reply
+    /// "playing|~|title|~|artist|~|album[|~|artworkURL[|~|position|~|length]]" or "stopped".
+    /// Spotify gives the length in milliseconds.
     static func parse(_ output: String, player: Player) -> NowPlaying? {
         let parts = output.components(separatedBy: separator)
         guard parts.count >= 4, parts[0] == "playing" || parts[0] == "paused" else { return nil }
-        return NowPlaying(player: player, isPlaying: parts[0] == "playing", title: parts[1], artist: parts[2], album: parts[3],
-                          artworkURL: parts.count > 4 && !parts[4].isEmpty ? parts[4] : nil, ref: nil)
+        var now = NowPlaying(player: player, isPlaying: parts[0] == "playing", title: parts[1], artist: parts[2], album: parts[3],
+                             artworkURL: parts.count > 4 && !parts[4].isEmpty ? parts[4] : nil, ref: nil)
+        if parts.count > 6, let position = number(parts[5]), var length = number(parts[6]), length > 0 {
+            if player == .spotify { length /= 1000 }
+            now.position = position
+            now.duration = length
+        }
+        return now
+    }
+
+    /// AppleScript writes decimals the way the Mac's region does ("102,5" in some).
+    private static func number(_ text: String) -> Double? {
+        Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: "."))
     }
 
     /// Browsers reply with JSON built from the page's media element and Media Session.
@@ -80,8 +96,13 @@ struct NowPlaying: Equatable {
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let title = json["title"] as? String, !title.isEmpty else { return nil }
         let artwork = (json["artwork"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-        return NowPlaying(player: player, isPlaying: json["playing"] as? Bool ?? false, title: title,
-                          artist: json["artist"] as? String ?? "", album: "", artworkURL: artwork, ref: json["ref"] as? String)
+        var now = NowPlaying(player: player, isPlaying: json["playing"] as? Bool ?? false, title: title,
+                             artist: json["artist"] as? String ?? "", album: "", artworkURL: artwork, ref: json["ref"] as? String)
+        if let length = json["duration"] as? Double, length.isFinite, length > 0 {
+            now.duration = length
+            now.position = json["position"] as? Double
+        }
+        return now
     }
 
     /// A player that's playing wins; otherwise the first (paused) one in order.
@@ -104,7 +125,8 @@ enum PlayerScripts {
     static func querySource(_ player: Player) -> String? {
         switch player {
         case .music, .spotify:
-            let artwork = player == .spotify ? " & sep & (artwork url of t)" : ""
+            // Artwork URL (Spotify only), then position and length.
+            let artwork = player == .spotify ? "(artwork url of t)" : "\"\""
             let source = """
             tell application "\(player.appName)"
                 if player state is stopped then return "stopped"
@@ -112,7 +134,7 @@ enum PlayerScripts {
                 set ps to "paused"
                 if player state is playing then set ps to "playing"
                 set t to current track
-                return ps & sep & (name of t) & sep & (artist of t) & sep & (album of t)\(artwork)
+                return ps & sep & (name of t) & sep & (artist of t) & sep & (album of t) & sep & \(artwork) & sep & (player position as text) & sep & (duration of t as text)
             end tell
             """
             return source
@@ -126,7 +148,13 @@ enum PlayerScripts {
                 end try
                 set ps to "paused"
                 if playing then set ps to "playing"
-                return ps & "\(sep)" & n & "\(sep)" & "" & "\(sep)" & ""
+                set p to ""
+                set d to ""
+                try
+                    set p to (current time as text)
+                    set d to (duration of current item as text)
+                end try
+                return ps & "\(sep)" & n & "\(sep)" & "" & "\(sep)" & "" & "\(sep)" & "" & "\(sep)" & p & "\(sep)" & d
             end tell
             """
             return source
@@ -155,6 +183,24 @@ enum PlayerScripts {
         }
     }
 
+    /// Jump to a point in the track.
+    static func seek(to seconds: Double, in now: NowPlaying) -> String {
+        let at = String(format: "%.1f", max(0, seconds))
+        switch now.player {
+        case .music, .spotify:
+            return "tell application \"\(now.player.appName)\" to set player position to \(at)"
+        case .vlc:
+            return "tell application \"VLC\" to set current time to \(Int(max(0, seconds)))"
+        case .safari, .chrome, .brave, .edge:
+            let parts = (now.ref ?? "1:1").split(separator: ":").map(String.init)
+            let (w, t) = (parts.first ?? "1", parts.count > 1 ? parts[1] : "1")
+            let js = "(function(){" + jsFindMedia + "if(e)e.currentTime=" + at + ";})()"
+            return now.player == .safari
+                ? "tell application \"Safari\" to do JavaScript \"\(js)\" in tab \(t) of window \(w)"
+                : "tell application \"\(now.player.appName)\" to execute tab \(t) of window \(w) javascript \"\(js)\""
+        }
+    }
+
     // MARK: Browsers
 
     /// Sites whose tabs are always checked; the front window's active tab is checked too.
@@ -172,7 +218,8 @@ enum PlayerScripts {
         "(function(){" + jsFindMedia + "if(!e)return '';"
         + "var md=navigator.mediaSession&&navigator.mediaSession.metadata;var art='';"
         + "if(md&&md.artwork&&md.artwork.length){art=md.artwork[md.artwork.length-1].src;}"
-        + "return JSON.stringify({playing:!e.paused,title:(md&&md.title)||document.title,artist:(md&&md.artist)||location.hostname,artwork:art});})()"
+        + "return JSON.stringify({playing:!e.paused,title:(md&&md.title)||document.title,artist:(md&&md.artist)||location.hostname,artwork:art,"
+        + "position:e.currentTime,duration:isFinite(e.duration)?e.duration:null});})()"
 
     private static let jsPlayPause = "(function(){" + jsFindMedia + "if(e){if(e.paused)e.play();else e.pause();}})()"
 
@@ -228,5 +275,20 @@ private extension PlayerScripts.Command {
         case .next: return 1
         case .previous: return 2
         }
+    }
+}
+
+/// Track times as players show them, and the position between checks.
+enum TrackTime {
+    static func text(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds))
+        let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
+    /// Players are asked every 1.5 s; in between, a playing track keeps moving.
+    static func live(position: Double, duration: Double, playing: Bool, since: Date, now: Date) -> Double {
+        guard playing else { return position }
+        return min(duration, position + now.timeIntervalSince(since))
     }
 }

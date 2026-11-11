@@ -137,6 +137,8 @@ struct BatteryBadge: View {
                     .foregroundStyle(system.isCharging ? Color.green : (level <= 20 ? Color.red : Color.white))
             }
             .foregroundStyle(.secondary)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Battery \(level)%\(system.isCharging ? ", charging" : "")")
         }
     }
 }
@@ -158,6 +160,8 @@ struct SettingsMenu: View {
         } label: {
             Image(systemName: "gearshape.fill")
         }
+        .accessibilityLabel("Settings")
+        .help("Settings")
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()

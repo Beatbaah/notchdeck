@@ -89,6 +89,8 @@ struct TabButton: View {
         }
         .buttonStyle(.plain)
         .help(tab.title)
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

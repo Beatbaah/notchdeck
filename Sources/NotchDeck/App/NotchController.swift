@@ -202,6 +202,12 @@ final class NotchController: NSObject {
         }
     }
 
+    /// The keyboard shortcut: open (held for a moment so it doesn't close
+    /// at once when the pointer is elsewhere), or close.
+    func toggle() {
+        if state.isExpanded { collapse() } else { expand(holdOpenFor: 4) }
+    }
+
     func collapse() {
         outsideSince = nil
         guard state.isExpanded, let panel else { return }

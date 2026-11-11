@@ -11,6 +11,10 @@ final class MusicController: ObservableObject {
     @Published private(set) var title = ""
     @Published private(set) var artist = ""
     @Published private(set) var artwork: NSImage?
+    /// Seconds in and length at the last check (nil: no bar, e.g. a live stream).
+    @Published private(set) var position: Double?
+    @Published private(set) var duration: Double?
+    private(set) var positionCheckedAt = Date()
 
     private var current: NowPlaying?
     private var timer: Timer?
@@ -44,6 +48,22 @@ final class MusicController: ObservableObject {
         send(.playPause)
     }
     func next() { send(.next) }
+
+    /// Jump to a point in the track (the progress bar).
+    func seek(to seconds: Double) {
+        guard let current else { return }
+        position = seconds
+        positionCheckedAt = Date()
+        AppleScript.runAsync(PlayerScripts.seek(to: seconds, in: current)) { [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self?.refresh() }
+        }
+    }
+
+    /// Where the track is now, moving on between checks while it plays.
+    func livePosition(at now: Date = Date()) -> Double? {
+        guard let position, let duration else { return nil }
+        return TrackTime.live(position: position, duration: duration, playing: isPlaying, since: positionCheckedAt, now: now)
+    }
     func previous() { send(.previous) }
 
     private func send(_ command: PlayerScripts.Command) {
@@ -63,9 +83,14 @@ final class MusicController: ObservableObject {
                 artist = ""
                 artwork = nil
                 artworkKey = ""
+                position = nil
+                duration = nil
             }
             return
         }
+        position = now.position
+        duration = now.duration
+        positionCheckedAt = Date()
         player = now.player
         isPlaying = now.isPlaying
         title = now.title

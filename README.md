@@ -59,6 +59,11 @@ Manage Certificates → **+** → Apple Development. Without it the build is sig
 for Automation again after each rebuild. If Gatekeeper
 blocks the first launch, right-click the app → **Open**.
 
+## Keyboard shortcut
+
+**⌃⌥N** opens or closes the notch from anywhere. Opening NotchDeck again while it's running opens the
+panel of the copy that's already running.
+
 ## Project layout
 
 ```
@@ -66,7 +71,8 @@ Sources/NotchDeck/
   App/     entry point, app delegate, notch window controller, shared state, AppleScript helper
   Models/  music, timer, clipboard, file shelf, app launcher, system (volume/battery)
   Views/   SwiftUI views for the closed notch, the open panel and each tab
-Support/Info.plist
+Support/Info.plist, AppIcon.icns
+tools/make-icon.swift   redraws the app icon (see the comment at its top)
 build.sh
 ```
 

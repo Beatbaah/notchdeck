@@ -72,10 +72,15 @@ struct ShelfItem: View {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.white, .gray)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Remove \(url.lastPathComponent) from the shelf")
             }
         }
         .onHover { hovering = $0 }
         .onTapGesture(count: 2) { NSWorkspace.shared.open(url) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(url.lastPathComponent)
+        .accessibilityAction(named: "Open") { NSWorkspace.shared.open(url) }
+        .accessibilityAction(named: "Remove from shelf") { onRemove() }
         .onDrag { NSItemProvider(contentsOf: url) ?? NSItemProvider() }
         .contextMenu {
             Button("Open") { NSWorkspace.shared.open(url) }

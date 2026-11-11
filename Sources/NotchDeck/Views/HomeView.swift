@@ -40,11 +40,13 @@ struct MusicCard: View {
                         Text(music.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
                         Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                         Text(music.player?.displayName ?? "").font(.caption2).foregroundStyle(.tertiary)
-                        Spacer(minLength: 6)
+                        Spacer(minLength: 4)
+                        TrackProgress(music: music)
                         HStack(spacing: 20) {
-                            controlButton("backward.fill", size: 14) { music.previous() }
-                            controlButton(music.isPlaying ? "pause.fill" : "play.fill", size: 20) { music.playPause() }
-                            controlButton("forward.fill", size: 14) { music.next() }
+                            controlButton("backward.fill", size: 14, label: "Previous track") { music.previous() }
+                            controlButton(music.isPlaying ? "pause.fill" : "play.fill", size: 20,
+                                          label: music.isPlaying ? "Pause" : "Play") { music.playPause() }
+                            controlButton("forward.fill", size: 14, label: "Next track") { music.next() }
                         }
                     }
                     Spacer(minLength: 0)
@@ -54,7 +56,7 @@ struct MusicCard: View {
         }
     }
 
-    private func controlButton(_ symbol: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+    private func controlButton(_ symbol: String, size: CGFloat, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: size))
@@ -62,6 +64,8 @@ struct MusicCard: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .help(label)
     }
 }
 
@@ -111,6 +115,7 @@ struct SystemCard: View {
                             .frame(width: 18)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(system.muted ? "Unmute" : "Mute")
                     Slider(value: Binding(get: { system.volume },
                                           set: { system.setVolume($0) }),
                            in: 0...100)
@@ -129,6 +134,38 @@ struct SystemCard: View {
                     Label("Sleep display", systemImage: "moon.fill")
                 }
                 .buttonStyle(PillButtonStyle())
+            }
+        }
+    }
+}
+
+/// The song's progress, with times; drag to jump. Hidden when the length is unknown.
+struct TrackProgress: View {
+    @ObservedObject var music: MusicController
+    @State private var dragging: Double?
+
+    var body: some View {
+        if let duration = music.duration {
+            TimelineView(.periodic(from: .now, by: 0.5)) { context in
+                let at = dragging ?? music.livePosition(at: context.date) ?? 0
+                VStack(spacing: 2) {
+                    Slider(value: Binding(get: { at }, set: { dragging = $0 }), in: 0...max(duration, 1)) { editing in
+                        if !editing, let target = dragging {
+                            music.seek(to: target)
+                            dragging = nil
+                        }
+                    }
+                    .controlSize(.mini)
+                    .accessibilityLabel("Track position")
+                    .accessibilityValue("\(TrackTime.text(at)) of \(TrackTime.text(duration))")
+                    HStack {
+                        Text(TrackTime.text(at))
+                        Spacer()
+                        Text("-" + TrackTime.text(duration - at))
+                    }
+                    .font(.system(size: 10).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                }
             }
         }
     }
