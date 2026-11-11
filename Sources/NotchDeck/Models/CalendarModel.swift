@@ -53,9 +53,11 @@ final class CalendarModel: ObservableObject {
 
     private let store = EKEventStore()
     private var timer: Timer?
+    private let authorizationStatus: () -> EKAuthorizationStatus
 
-    init() {
-        access = Self.currentAccess()
+    init(authorizationStatus: @escaping () -> EKAuthorizationStatus = { EKEventStore.authorizationStatus(for: .event) }) {
+        self.authorizationStatus = authorizationStatus
+        access = Self.access(for: authorizationStatus())
         NotificationCenter.default.addObserver(self, selector: #selector(storeChanged), name: .EKEventStoreChanged, object: store)
         // Ended events drop off, and "today" rolls over at midnight.
         let timer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in self?.reload() }
@@ -64,8 +66,7 @@ final class CalendarModel: ObservableObject {
         reload()
     }
 
-    private static func currentAccess() -> Access {
-        let status = EKEventStore.authorizationStatus(for: .event)
+    private static func access(for status: EKAuthorizationStatus) -> Access {
         if #available(macOS 14.0, *) {
             switch status {
             case .fullAccess: return .granted
@@ -111,6 +112,9 @@ final class CalendarModel: ObservableObject {
     }
 
     func reload() {
+        // Access may have been granted or removed in System Settings since the last look.
+        let now = Self.access(for: authorizationStatus())
+        if now != access, now != .notAsked { access = now }
         guard access == .granted else { items = []; return }
         let cal = Calendar.current
         let start = cal.startOfDay(for: Date())

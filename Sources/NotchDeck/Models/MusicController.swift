@@ -54,7 +54,7 @@ final class MusicController: ObservableObject {
         guard let current else { return }
         position = seconds
         positionCheckedAt = Date()
-        AppleScript.runAsync(PlayerScripts.seek(to: seconds, in: current)) { [weak self] _ in
+        AppleScript.runAsync(PlayerScripts.seek(to: seconds, in: current), ifRunning: current.player.bundleID) { [weak self] _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self?.refresh() }
         }
     }
@@ -68,7 +68,7 @@ final class MusicController: ObservableObject {
 
     private func send(_ command: PlayerScripts.Command) {
         guard let current else { return }
-        AppleScript.runAsync(PlayerScripts.command(command, to: current)) { [weak self] _ in
+        AppleScript.runAsync(PlayerScripts.command(command, to: current), ifRunning: current.player.bundleID) { [weak self] _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self?.refresh() }
         }
     }
@@ -105,7 +105,7 @@ final class MusicController: ObservableObject {
 
     private func loadArtwork(for now: NowPlaying, key: String) {
         if now.player == .music {
-            AppleScript.runAsync("tell application \"Music\" to get raw data of artwork 1 of current track") { [weak self] result in
+            AppleScript.runAsync(PlayerScripts.artworkSource(.music)!, ifRunning: Player.music.bundleID) { [weak self] result in
                 guard let self, self.artworkKey == key, let data = result?.data else { return }
                 self.artwork = NSImage(data: data)
             }

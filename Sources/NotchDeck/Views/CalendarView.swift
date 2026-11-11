@@ -33,6 +33,7 @@ struct CalendarView: View {
                 agenda
             }
         }
+        .onAppear { calendar.reload() }
     }
 
     @ViewBuilder private var agenda: some View {

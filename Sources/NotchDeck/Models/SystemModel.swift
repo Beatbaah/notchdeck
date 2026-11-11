@@ -23,17 +23,17 @@ final class SystemModel: ObservableObject {
     }
 
     func refreshVolume() {
-        AppleScript.runAsync("output volume of (get volume settings)") { [weak self] result in
+        AppleScript.runSystem("output volume of (get volume settings)") { [weak self] result in
             if let result { self?.volume = Double(result.int32Value) }
         }
-        AppleScript.runAsync("output muted of (get volume settings)") { [weak self] result in
+        AppleScript.runSystem("output muted of (get volume settings)") { [weak self] result in
             if let result { self?.muted = result.booleanValue }
         }
     }
 
     // A slider drag fires many values; send one at a time, ending on the latest.
     private lazy var volumeSender = LatestValueSender<Int> { level, done in
-        AppleScript.runAsync("set volume output volume \(level)") { _ in done() }
+        AppleScript.runSystem("set volume output volume \(level)") { _ in done() }
     }
 
     func setVolume(_ value: Double) {
@@ -43,7 +43,7 @@ final class SystemModel: ObservableObject {
 
     func toggleMute() {
         muted.toggle()
-        AppleScript.runAsync("set volume output muted \(muted ? "true" : "false")")
+        AppleScript.runSystem("set volume output muted \(muted ? "true" : "false")")
     }
 
     /// Turns the display off. If "require password immediately" is on, this also locks the Mac.

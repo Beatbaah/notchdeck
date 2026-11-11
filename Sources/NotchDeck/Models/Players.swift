@@ -117,12 +117,16 @@ enum PlayerScripts {
 
     static func query(_ player: Player) -> NowPlaying? {
         guard let source = querySource(player) else { return nil }
-        guard let output = AppleScript.run(source)?.stringValue else { return nil }
+        guard let output = AppleScript.run(source, ifRunning: player.bundleID)?.stringValue else { return nil }
         return player.isBrowser ? NowPlaying.parseBrowser(output, player: player) : NowPlaying.parse(output, player: player)
     }
 
     /// The query script for a player (also compiled by the tests).
     static func querySource(_ player: Player) -> String? {
+        unguardedQuery(player).map { guarded($0) }
+    }
+
+    private static func unguardedQuery(_ player: Player) -> String? {
         switch player {
         case .music, .spotify:
             // Artwork URL (Spotify only), then position and length.
@@ -163,9 +167,29 @@ enum PlayerScripts {
         }
     }
 
+    /// Gives up on a stuck or unanswered app after a few seconds instead of AppleScript's two minutes.
+    /// (Run player scripts with `AppleScript.run(_:ifRunning:)` so a quit app isn't relaunched.)
+    static func guarded(_ source: String) -> String {
+        """
+        with timeout of 3 seconds
+        \(source)
+        end timeout
+        """
+    }
+
+    /// Music's artwork script; other players send an artwork URL instead.
+    static func artworkSource(_ player: Player) -> String? {
+        guard player == .music else { return nil }
+        return guarded("tell application \"Music\" to get raw data of artwork 1 of current track")
+    }
+
     enum Command { case playPause, next, previous }
 
     static func command(_ command: Command, to now: NowPlaying) -> String {
+        guarded(unguardedCommand(command, to: now))
+    }
+
+    private static func unguardedCommand(_ command: Command, to now: NowPlaying) -> String {
         switch now.player {
         case .music, .spotify:
             let verb = ["playpause", "next track", "previous track"][command.index]
@@ -185,6 +209,10 @@ enum PlayerScripts {
 
     /// Jump to a point in the track.
     static func seek(to seconds: Double, in now: NowPlaying) -> String {
+        guarded(unguardedSeek(to: seconds, in: now))
+    }
+
+    private static func unguardedSeek(to seconds: Double, in now: NowPlaying) -> String {
         let at = String(format: "%.1f", max(0, seconds))
         switch now.player {
         case .music, .spotify:
@@ -209,9 +237,10 @@ enum PlayerScripts {
         "deezer.com", "tidal.com", "mixcloud.com", "twitch.tv", "vimeo.com",
     ]
 
+    // Muted or silent media (autoplay previews, feed videos) isn't treated as playing.
     // Page scripts use only single quotes, so they sit inside AppleScript's double quotes as they are.
-    private static let jsFindMedia =
-        "var m=Array.prototype.slice.call(document.querySelectorAll('video,audio')).filter(function(e){return e.currentSrc&&e.duration>0;});"
+    static let jsFindMedia =
+        "var m=Array.prototype.slice.call(document.querySelectorAll('video,audio')).filter(function(e){return e.currentSrc&&e.duration>0&&!e.muted&&e.volume>0;});"
         + "var e=m.filter(function(x){return !x.paused;})[0]||m[0];"
 
     private static let jsQuery =

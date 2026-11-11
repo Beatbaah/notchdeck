@@ -1,8 +1,11 @@
-import Foundation
+import AppKit
 
-/// Runs AppleScript on one serial background queue so the UI never waits on Music, Spotify or volume calls.
+/// Runs AppleScript on background queues so the UI never waits on Music, Spotify or volume calls.
 enum AppleScript {
+    /// Player scripts, one at a time.
     static let queue = DispatchQueue(label: "notchdeck.applescript", qos: .userInitiated)
+    /// Volume and mute, kept apart so a stuck player never holds them up.
+    static let systemQueue = DispatchQueue(label: "notchdeck.applescript.system", qos: .userInitiated)
 
     /// Synchronous. Call only from `queue`.
     @discardableResult
@@ -13,10 +16,26 @@ enum AppleScript {
         return error == nil ? result : nil
     }
 
-    /// Runs on the background queue and calls `completion` on the main thread.
-    static func runAsync(_ source: String, completion: ((NSAppleEventDescriptor?) -> Void)? = nil) {
+    /// Runs only while the app is open. Synchronous; call only from `queue`.
+    /// Checked here, not inside the script: merely compiling `tell application "X"` launches X,
+    /// so a player quit since the last poll would otherwise come back.
+    @discardableResult
+    static func run(_ source: String, ifRunning bundleID: String) -> NSAppleEventDescriptor? {
+        guard !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty else { return nil }
+        return run(source)
+    }
+
+    /// Volume and mute: runs on `systemQueue` and calls `completion` on the main thread.
+    static func runSystem(_ source: String, completion: ((NSAppleEventDescriptor?) -> Void)? = nil) {
+        runAsync(source, on: systemQueue, completion: completion)
+    }
+
+    /// Runs on a background queue (players' by default) and calls `completion` on the main thread.
+    /// With `ifRunning`, the script is skipped when that app isn't open.
+    static func runAsync(_ source: String, on queue: DispatchQueue = queue, ifRunning bundleID: String? = nil,
+                         completion: ((NSAppleEventDescriptor?) -> Void)? = nil) {
         queue.async {
-            let result = run(source)
+            let result = bundleID.map { run(source, ifRunning: $0) } ?? run(source)
             if let completion {
                 DispatchQueue.main.async { completion(result) }
             }
