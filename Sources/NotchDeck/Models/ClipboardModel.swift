@@ -17,6 +17,7 @@ final class ClipboardModel: ObservableObject {
 
     init() {
         let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in self?.check() }
+        timer.tolerance = 0.2
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }

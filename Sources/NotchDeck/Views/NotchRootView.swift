@@ -53,13 +53,17 @@ struct NotchRootView: View {
 }
 
 /// Content settling in as the island opens: from a little small, faint and soft to sharp.
+/// With Reduce Motion on, it only fades.
 struct IslandArrival: ViewModifier {
     let progress: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func body(content: Content) -> some View {
+        let p = reduceMotion ? 1 : progress
         content
-            .scaleEffect(0.9 + 0.1 * progress, anchor: .top)
+            .scaleEffect(0.9 + 0.1 * p, anchor: .top)
             .opacity(progress)
-            .blur(radius: 6 * (1 - progress))
+            .blur(radius: 6 * (1 - p))
     }
 }
 

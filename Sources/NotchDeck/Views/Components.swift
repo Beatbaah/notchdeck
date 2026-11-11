@@ -60,17 +60,23 @@ struct ArtworkView: View {
 
 /// Four bouncing bars shown while music is playing.
 struct EqualizerBars: View {
+    /// Bouncing only while playing, and never with Reduce Motion on (the bars then stand still).
+    static func animates(playing: Bool, reduceMotion: Bool) -> Bool { playing && !reduceMotion }
+
     let playing: Bool
     var color: Color = .green
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !playing)) { context in
+        let moving = Self.animates(playing: playing, reduceMotion: reduceMotion)
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !moving)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             HStack(alignment: .center, spacing: 2) {
                 ForEach(0..<4, id: \.self) { i in
                     Capsule()
                         .fill(color)
-                        .frame(width: 3, height: playing ? 4 + 9 * abs(sin(t * 3.2 + Double(i) * 1.3)) : 3)
+                        .frame(width: 3, height: moving ? 4 + 9 * abs(sin(t * 3.2 + Double(i) * 1.3))
+                                                   : (playing ? [7, 11, 5, 9][i] : 3))
                 }
             }
             .frame(height: 14)

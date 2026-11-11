@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 enum NotchTab: String, CaseIterable, Identifiable {
@@ -83,10 +84,36 @@ final class NotchState: ObservableObject {
 }
 
 /// The island's motion: a lively, slightly bouncy open; a calmer close.
+/// With Reduce Motion on, every move is a short fade instead.
 enum Island {
-    static let open = Animation.spring(response: 0.5, dampingFraction: 0.7)
-    static let close = Animation.spring(response: 0.42, dampingFraction: 0.86)
-    static let swell = Animation.spring(response: 0.28, dampingFraction: 0.62)
+    static var reduceMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+    static let fade = Animation.easeInOut(duration: 0.2)
+    static var open: Animation { reduceMotion() ? fade : .spring(response: 0.5, dampingFraction: 0.7) }
+    static var close: Animation { reduceMotion() ? fade : .spring(response: 0.42, dampingFraction: 0.86) }
+    static var swell: Animation { reduceMotion() ? fade : .spring(response: 0.28, dampingFraction: 0.62) }
+}
+
+/// When the open panel closes. Opened by hover, it closes soon after the pointer leaves.
+/// Opened by the shortcut or menu ("pinned"), it waits until the pointer has come in and
+/// gone out again (the shortcut and Esc close it too).
+enum ClosePolicy {
+    static let grace: TimeInterval = 0.3
+
+    static func shouldClose(pinned: Bool, pointerInside: Bool, pointerHasEntered: Bool, outsideFor: TimeInterval) -> Bool {
+        if pointerInside { return false }
+        if pinned && !pointerHasEntered { return false }
+        return outsideFor >= grace
+    }
+}
+
+/// How often players are asked: every tick while the panel is open, every few seconds
+/// while it's closed (enough for the live activity), never while the screen sleeps.
+enum PollPolicy {
+    static let closedInterval: TimeInterval = 5
+
+    static func shouldPollPlayers(panelOpen: Bool, screenAwake: Bool, sinceLast: TimeInterval) -> Bool {
+        screenAwake && (panelOpen || sinceLast >= closedInterval)
+    }
 }
 
 /// When a track change pops out of the closed notch.

@@ -16,20 +16,41 @@ final class MusicController: ObservableObject {
     @Published private(set) var duration: Double?
     private(set) var positionCheckedAt = Date()
 
+    /// Set by the notch: players are asked less often while nobody's looking (see `PollPolicy`).
+    var panelOpen = false
+    var screenAwake = true
+
     private var current: NowPlaying?
     private var timer: Timer?
     private var artworkKey = ""
     private var busy = false
+    private var lastPoll = Date.distantPast
 
     init() {
-        let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] _ in self?.refresh() }
+        let timer = Timer(timeInterval: 1.5, repeats: true) { [weak self] _ in self?.pollIfDue() }
+        timer.tolerance = 0.3
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
+        // Spotify and Music announce track and play/pause changes, so those show at once
+        // even between the slower checks.
+        let center = DistributedNotificationCenter.default()
+        for name in ["com.spotify.client.PlaybackStateChanged", "com.apple.Music.playerInfo"] {
+            center.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
+                self?.refresh()
+            }
+        }
+        refresh()
+    }
+
+    private func pollIfDue() {
+        guard PollPolicy.shouldPollPlayers(panelOpen: panelOpen, screenAwake: screenAwake,
+                                           sinceLast: Date().timeIntervalSince(lastPoll)) else { return }
         refresh()
     }
 
     func refresh() {
         guard !busy else { return }
+        lastPoll = Date()
         let running = Set(NSWorkspace.shared.runningApplications.compactMap { $0.bundleIdentifier })
         let candidates = Player.toQuery(running: running, browsersOn: UserDefaults.standard.bool(forKey: Self.browsersKey))
         guard !candidates.isEmpty else { apply(nil); return }

@@ -3,13 +3,43 @@ import SwiftUI
 
 /// A borderless panel that can take keyboard focus (for Notes) without activating the app.
 final class NotchPanel: NSPanel {
+    /// Esc.
+    var onCancel: (() -> Void)?
     override var canBecomeKey: Bool { true }
+    override func cancelOperation(_ sender: Any?) { onCancel?() }
     override var canBecomeMain: Bool { false }
 }
 
 /// Lets a click on a button work straight away, without first focusing the panel.
 final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
+/// Detects a file drag that started in another app (for example Finder): the drag
+/// pasteboard changes while the button is down. It's read only around clicks, not every tick.
+struct DragWatch {
+    private var lastChangeCount: Int?
+    private var wasDown = false
+    private(set) var active = false
+
+    mutating func update(buttonDown: Bool, changeCount: () -> Int, hasFiles: () -> Bool) -> Bool {
+        if buttonDown {
+            wasDown = true
+            if !active, let last = lastChangeCount {
+                let count = changeCount()
+                if count != last {
+                    active = hasFiles()
+                    lastChangeCount = count
+                }
+            }
+        } else {
+            // A fresh baseline after each release (and once at start).
+            if wasDown || lastChangeCount == nil { lastChangeCount = changeCount() }
+            wasDown = false
+            active = false
+        }
+        return active
+    }
 }
 
 /// Owns the panel that sits over the notch, and opens or closes it as the pointer moves.
@@ -24,12 +54,15 @@ final class NotchController: NSObject {
 
     private var hoverSince: Date?
     private var outsideSince: Date?
-    private var holdOpenUntil = Date.distantPast
+    /// Opened by the shortcut or menu: stays until dismissed (see `ClosePolicy`).
+    private var pinned = false
+    private var pointerHasEntered = false
+    private var screenAwake = true
 
     private var lastTitle: String?
     private var peekHide: DispatchWorkItem?
 
-    private var lastDragChangeCount = NSPasteboard(name: .drag).changeCount
+    private var dragWatch = DragWatch()
     private var fileDragActive = false
 
     init(models: Models) {
@@ -46,12 +79,52 @@ final class NotchController: NSObject {
                                                name: NSApplication.didChangeScreenParametersNotification,
                                                object: nil)
 
-        // Polling the pointer 20 times a second is cheap, needs no Accessibility permission,
-        // and keeps working while the user drags files from Finder.
+        // Nothing to watch while the display sleeps or another user is switched in.
+        let ws = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.screensDidSleepNotification, NSWorkspace.sessionDidResignActiveNotification] {
+            ws.addObserver(self, selector: #selector(screenAsleep), name: name, object: nil)
+        }
+        for name in [NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+            ws.addObserver(self, selector: #selector(screenAwoke), name: name, object: nil)
+        }
+
+        // It may launch (at login, say) with the display already off.
+        if CGDisplayIsAsleep(CGMainDisplayID()) != 0 {
+            screenAsleep()
+        } else {
+            startPolling()
+        }
+    }
+
+    /// Polling the pointer 20 times a second is cheap, needs no Accessibility permission,
+    /// and keeps working while the user drags files from Finder. The tolerance lets
+    /// macOS batch its wake-ups with other timers.
+    private func startPolling() {
+        guard pollTimer == nil else { return }
         let timer = Timer(timeInterval: 0.05, target: self, selector: #selector(tick),
                           userInfo: nil, repeats: true)
+        timer.tolerance = 0.02
         RunLoop.main.add(timer, forMode: .default)
         pollTimer = timer
+    }
+
+    @objc private func screenAsleep() {
+        screenAwake = false
+        models.music.screenAwake = false
+        collapse()
+        pollTimer?.invalidate()
+        pollTimer = nil
+        // Park the closed notch's animated bars; the first tick after waking brings them back.
+        peekHide?.cancel()
+        state.peek = nil
+        state.liveActivity = .none
+    }
+
+    @objc private func screenAwoke() {
+        screenAwake = true
+        models.music.screenAwake = true
+        models.music.refresh()
+        startPolling()
     }
 
     // MARK: Panel
@@ -70,6 +143,7 @@ final class NotchController: NSObject {
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = true
         panel.ignoresMouseEvents = true
+        panel.onCancel = { [weak self] in self?.collapse() }
 
         let host = FirstMouseHostingView(rootView: NotchRootView(state: state, models: models))
         host.sizingOptions = []
@@ -111,7 +185,7 @@ final class NotchController: NSObject {
     // MARK: Hover tracking
 
     @objc private func tick() {
-        guard let screen else { return }
+        guard let screen, screenAwake else { return }
         updateLiveActivity()
         trackFileDrag()
 
@@ -145,13 +219,15 @@ final class NotchController: NSObject {
             if fileDragActive, openRect.contains(mouse), state.tab != .shelf {
                 state.tab = .shelf
             }
-            if openRect.contains(mouse) || now < holdOpenUntil {
+            if openRect.contains(mouse) {
+                pointerHasEntered = true
                 outsideSince = nil
                 return
             }
             let start = outsideSince ?? now
             outsideSince = start
-            if now.timeIntervalSince(start) >= 0.3 {
+            if ClosePolicy.shouldClose(pinned: pinned, pointerInside: false, pointerHasEntered: pointerHasEntered,
+                                       outsideFor: now.timeIntervalSince(start)) {
                 collapse()
             }
         }
@@ -159,17 +235,9 @@ final class NotchController: NSObject {
 
     /// Detects a file drag that started in another app (for example Finder).
     private func trackFileDrag() {
-        let dragBoard = NSPasteboard(name: .drag)
-        let buttonDown = (NSEvent.pressedMouseButtons & 1) != 0
-        if buttonDown {
-            if !fileDragActive, dragBoard.changeCount != lastDragChangeCount {
-                fileDragActive = dragBoard.types?.contains(.fileURL) ?? false
-                lastDragChangeCount = dragBoard.changeCount
-            }
-        } else {
-            fileDragActive = false
-            lastDragChangeCount = dragBoard.changeCount
-        }
+        fileDragActive = dragWatch.update(buttonDown: (NSEvent.pressedMouseButtons & 1) != 0,
+                                          changeCount: { NSPasteboard(name: .drag).changeCount },
+                                          hasFiles: { NSPasteboard(name: .drag).types?.contains(.fileURL) ?? false })
     }
 
     private func updateLiveActivity() {
@@ -201,14 +269,21 @@ final class NotchController: NSObject {
 
     // MARK: Open / close
 
-    func expand(tab: NotchTab? = nil, holdOpenFor seconds: TimeInterval = 0) {
+    /// `pinned`: opened from the keyboard or menu, so it stays open and takes keyboard focus
+    /// (for Esc) until the user dismisses it.
+    func expand(tab: NotchTab? = nil, pinned: Bool = false) {
         hoverSince = nil
         outsideSince = nil
-        if seconds > 0 { holdOpenUntil = Date().addingTimeInterval(seconds) }
+        if pinned {
+            self.pinned = true
+            pointerHasEntered = false
+            panel?.makeKey()
+        }
         if let tab { state.tab = tab }
         guard !state.isExpanded else { return }
 
         models.system.refresh()
+        models.music.panelOpen = true
         models.music.refresh()
         panel?.ignoresMouseEvents = false
         peekHide?.cancel()
@@ -219,14 +294,16 @@ final class NotchController: NSObject {
         }
     }
 
-    /// The keyboard shortcut: open (held for a moment so it doesn't close
-    /// at once when the pointer is elsewhere), or close.
+    /// The keyboard shortcut: open (and stay open until dismissed), or close.
     func toggle() {
-        if state.isExpanded { collapse() } else { expand(holdOpenFor: 4) }
+        if state.isExpanded { collapse() } else { expand(pinned: true) }
     }
 
     func collapse() {
         outsideSince = nil
+        pinned = false
+        pointerHasEntered = false
+        models.music.panelOpen = false
         guard state.isExpanded, let panel else { return }
 
         // If Notes had keyboard focus, hand it back to the app the user was in.

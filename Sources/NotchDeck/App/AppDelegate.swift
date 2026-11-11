@@ -40,6 +40,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openNotch() {
-        controller?.expand(tab: .home, holdOpenFor: 3)
+        controller?.expand(tab: .home, pinned: true)
     }
 }
