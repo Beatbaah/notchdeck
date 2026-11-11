@@ -65,7 +65,7 @@ struct ShelfItem: View {
                 .frame(width: 78)
         }
         .padding(4)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(hovering ? 0.08 : 0)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(hovering ? 0.08 : 0)))
         .overlay(alignment: .topTrailing) {
             if hovering {
                 Button(action: onRemove) {

@@ -10,7 +10,17 @@ struct NotchRootView: View {
                                bottomRadius: state.isExpanded ? 24 : 10)
 
         ZStack(alignment: .top) {
-            shape.fill(Color.black)
+            if state.isExpanded {
+                // Frosted glass below the menu bar; solid black in the strip beside
+                // the physical notch (so the camera cut-out never shows), fading in.
+                GlassBackground()
+                LinearGradient(stops: [.init(color: .black, location: 0),
+                                       .init(color: .black, location: stripFraction),
+                                       .init(color: .black.opacity(0), location: min(1, stripFraction + 0.09))],
+                               startPoint: .top, endPoint: .bottom)
+            } else {
+                Color.black
+            }
 
             if state.isExpanded {
                 ExpandedView(state: state, models: models)
@@ -19,13 +29,18 @@ struct NotchRootView: View {
             } else {
                 CollapsedView(state: state, music: models.music, timer: models.timer)
                     .frame(width: state.collapsedSize.width, height: state.collapsedSize.height)
+                    .environment(\.colorScheme, .dark)
                     .transition(.opacity)
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
         .clipShape(shape)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .environment(\.colorScheme, .dark)
+    }
+
+    /// The menu bar strip's share of the open panel's height.
+    private var stripFraction: CGFloat {
+        state.notchSize.height / max(1, state.expandedSize.height)
     }
 }
 
@@ -89,6 +104,7 @@ struct ExpandedView: View {
                 SettingsMenu()
             }
             .frame(height: state.notchSize.height)
+            .environment(\.colorScheme, .dark) // the tab row sits in the black strip
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

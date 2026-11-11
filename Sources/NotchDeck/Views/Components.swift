@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct Card<Content: View>: View {
     @ViewBuilder var content: Content
@@ -9,7 +10,7 @@ struct Card<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.07))
+                    .fill(Color.primary.opacity(0.07))
             )
     }
 }
@@ -21,7 +22,7 @@ struct PillButtonStyle: ButtonStyle {
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity)
-            .background(Capsule().fill(Color.white.opacity(configuration.isPressed ? 0.22 : 0.11)))
+            .background(Capsule().fill(Color.primary.opacity(configuration.isPressed ? 0.2 : 0.1)))
             .contentShape(Capsule())
     }
 }
@@ -37,7 +38,7 @@ struct ArtworkView: View {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
                 ZStack {
-                    Color.white.opacity(0.1)
+                    Color.primary.opacity(0.1)
                     Image(systemName: "music.note")
                         .font(.system(size: size * 0.4))
                         .foregroundStyle(.secondary)
@@ -89,4 +90,17 @@ struct TabButton: View {
         .buttonStyle(.plain)
         .help(tab.title)
     }
+}
+
+/// macOS frosted glass that blends with the windows behind the panel, like
+/// menus and Control Centre. Light or dark follows the system appearance.
+struct GlassBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .popover
+        view.blendingMode = .behindWindow
+        view.state = .active
+        return view
+    }
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
 }
