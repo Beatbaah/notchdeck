@@ -26,6 +26,8 @@ struct NotchRootView: View {
             if state.isExpanded {
                 ExpandedView(state: state, models: models)
                     .frame(width: state.expandedSize.width, height: state.expandedSize.height)
+                    // Clear glass over a bright window: a soft shadow keeps white text readable.
+                    .shadow(color: .black.opacity(0.45), radius: 1.5, x: 0, y: 0.5)
                     // Content arrives a beat after the shape, sharpening into place.
                     .transition(.asymmetric(
                         insertion: .modifier(active: IslandArrival(progress: 0), identity: IslandArrival(progress: 1))
@@ -42,8 +44,7 @@ struct NotchRootView: View {
         .frame(width: size.width, height: size.height, alignment: .top)
         .clipShape(shape)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // Dark like the Dynamic Island in either system appearance: white text
-        // stays readable over whatever window is behind the clear glass.
+        // White text and icons in either system appearance, like the Dynamic Island.
         .environment(\.colorScheme, .dark)
     }
 
