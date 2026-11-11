@@ -36,7 +36,7 @@ Requires macOS 13 Ventura or later and Xcode (or the Command Line Tools: `xcode-
 ```bash
 cd notchdeck
 ./build.sh
-cp -R build/NotchDeck.app /Applications/
+cp -R build.noindex/NotchDeck.app /Applications/
 open /Applications/NotchDeck.app
 ```
 

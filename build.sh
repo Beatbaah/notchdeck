@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds NotchDeck.app into ./build. Run on a Mac with Xcode or the Command Line Tools installed.
+# Builds NotchDeck.app into ./build.noindex (".noindex" keeps Spotlight, and so the
+# Apps launcher, from listing this copy beside the one in /Applications). Run on a Mac with Xcode or the Command Line Tools installed.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -7,7 +8,7 @@ APP_NAME="NotchDeck"
 swift build -c release
 BIN_DIR="$(swift build -c release --show-bin-path)"
 
-APP="build/${APP_NAME}.app"
+APP="build.noindex/${APP_NAME}.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/$APP_NAME" "$APP/Contents/MacOS/$APP_NAME"

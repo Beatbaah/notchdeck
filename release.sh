@@ -23,7 +23,7 @@ MODE="${2:-publish}"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "usage: ./release.sh <version like 1.0.0> [--no-publish|--local]"
 case "$MODE" in publish|--no-publish|--local) ;; *) die "unknown option: $MODE" ;; esac
 
-APP="build/NotchDeck.app"
+APP="build.noindex/NotchDeck.app"
 ZIP="dist/NotchDeck-$VERSION.zip"
 TAG="v$VERSION"
 PROFILE="${NOTCHDECK_NOTARY_PROFILE:-notchdeck}"

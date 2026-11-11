@@ -1,5 +1,6 @@
 .build/
 build/
+build.noindex/
 *.xcodeproj/xcuserdata/
 .swiftpm/
 Support/AppIcon.iconset/
